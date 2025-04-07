@@ -10,3 +10,7 @@ add_executable(myVectorDB main.cpp
         FaissIndex.cpp
         FaissIndex.h
 )
+
+target_include_directories(myVectorDB PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-httplib
+)
