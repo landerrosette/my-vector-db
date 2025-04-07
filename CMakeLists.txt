@@ -13,4 +13,5 @@ add_executable(myVectorDB main.cpp
 
 target_include_directories(myVectorDB PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-httplib
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/rapidjson/include
 )
