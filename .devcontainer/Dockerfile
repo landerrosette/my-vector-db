@@ -18,6 +18,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends  \
     libopenblas-dev
 
+# Install dependencies compiled from source
 WORKDIR /tmp
 RUN wget -q https://github.com/facebookresearch/faiss/archive/refs/tags/v1.10.0.tar.gz \
     && tar -xzf v1.10.0.tar.gz \
@@ -28,6 +29,3 @@ RUN wget -q https://github.com/facebookresearch/faiss/archive/refs/tags/v1.10.0.
     && cd /tmp \
     && rm v1.10.0.tar.gz \
     && rm -rf faiss-1.10.0
-
-#WORKDIR /tmp
-#RUN
