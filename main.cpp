@@ -4,6 +4,7 @@
 
 int main() {
     init_global_logger();
+    set_log_level(spdlog::level::debug);
     GlobalLogger->info("Global logger initialized");
 
     int dim = 1;
