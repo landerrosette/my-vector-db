@@ -102,7 +102,7 @@ IndexFactory::IndexType HttpServer::getIndexTypeFromRequest(const rapidjson::Doc
 
 void HttpServer::setJsonResponse(const rapidjson::Document &json_response, httplib::Response &res) {
     rapidjson::StringBuffer buffer;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    rapidjson::Writer writer(buffer);
     json_response.Accept(writer);
     res.set_content(buffer.GetString(), "application/json");
 }
