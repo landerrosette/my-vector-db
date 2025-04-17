@@ -12,6 +12,7 @@ add_executable(myVectorDB
         IndexFactory.cpp
         HttpServer.cpp
         logger.cpp
+        HNSWLibIndex.cpp
 )
 
 target_include_directories(myVectorDB PRIVATE
