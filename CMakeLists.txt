@@ -18,6 +18,7 @@ target_include_directories(myVectorDB PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-httplib
         ${CMAKE_CURRENT_SOURCE_DIR}/external/rapidjson/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external/spdlog/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/hnswlib
 )
 
 target_link_libraries(myVectorDB PRIVATE faiss)
