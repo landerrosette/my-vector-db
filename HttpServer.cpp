@@ -9,6 +9,7 @@
 #include "logger.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
+#include "HNSWLibIndex.h"
 
 HttpServer::HttpServer(std::string host, int port) : host(std::move(host)), port(port) {
     server.Post("/search", [this](const httplib::Request &req, httplib::Response &res) {
@@ -38,6 +39,11 @@ void HttpServer::searchHandler(const httplib::Request &req, httplib::Response &r
         case IndexFactory::IndexType::FLAT: {
             auto *faissIndex = static_cast<FaissIndex *>(index);
             results = faissIndex->search_vectors(query, k);
+            break;
+        }
+        case IndexFactory::IndexType::HNSW: {
+            auto *hnswIndex = static_cast<HNSWLibIndex *>(index);
+            results = hnswIndex->search_vectors(query, k);
             break;
         }
         default:
@@ -80,6 +86,11 @@ void HttpServer::insertHandler(const httplib::Request &req, httplib::Response &r
             faissIndex->insert_vectors(data, label);
             break;
         }
+        case IndexFactory::IndexType::HNSW: {
+            auto *hnswIndex = static_cast<HNSWLibIndex *>(index);
+            hnswIndex->insert_vectors(data, label);
+            break;
+        }
         default:
             break;
     }
@@ -96,6 +107,8 @@ IndexFactory::IndexType HttpServer::getIndexTypeFromRequest(const rapidjson::Doc
         std::string index_type_string = json_request["indexType"].GetString();
         if (index_type_string == "FLAT")
             return IndexFactory::IndexType::FLAT;
+        else if (index_type_string == "HNSW")
+            return IndexFactory::IndexType::HNSW;
     }
     return IndexFactory::IndexType::UNKNOWN;
 }
