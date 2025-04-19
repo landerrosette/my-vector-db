@@ -33,4 +33,9 @@ target_link_libraries(myVectorDB PRIVATE
         faiss
         spdlog::spdlog
         ${ROCKSDB_LIBRARY}
+        z
+        bz2
+        lz4
+        snappy
+        zstd
 )
