@@ -1,5 +1,5 @@
 #include "FaissIndex.h"
-
+#include <faiss/IndexIDMap.h>
 #include "logger.h"
 
 void FaissIndex::insert_vectors(const std::vector<float> &data, uint64_t label) {
@@ -21,4 +21,10 @@ std::pair<std::vector<long>, std::vector<float> > FaissIndex::search_vectors(con
     }
 
     return {indices, distances};
+}
+
+void FaissIndex::remove_vectors(const std::vector<long> &ids) {
+    auto *id_map = dynamic_cast<faiss::IndexIDMap *>(index);
+    faiss::IDSelectorBatch selector(ids.size(), ids.data());
+    id_map->remove_ids(selector);
 }

@@ -15,6 +15,8 @@ public:
 
     std::pair<std::vector<long>, std::vector<float> > search_vectors(const std::vector<float> &query, int k);
 
+    void remove_vectors(const std::vector<long> &ids);
+
 private:
     faiss::Index *index;
 };
