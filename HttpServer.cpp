@@ -5,18 +5,25 @@
 #include <vector>
 
 #include "FaissIndex.h"
+#include "HNSWLibIndex.h"
 #include "IndexFactory.h"
 #include "logger.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-#include "HNSWLibIndex.h"
 
-HttpServer::HttpServer(std::string host, int port) : host(std::move(host)), port(port) {
+HttpServer::HttpServer(std::string host, int port, VectorDatabase *vector_database) : host(std::move(host)), port(port),
+    vector_database_(vector_database) {
     server.Post("/search", [this](const httplib::Request &req, httplib::Response &res) {
         searchHandler(req, res);
     });
     server.Post("/insert", [this](const httplib::Request &req, httplib::Response &res) {
         insertHandler(req, res);
+    });
+    server.Post("/upsert", [this](const httplib::Request &req, httplib::Response &res) {
+        upsertHandler(req, res);
+    });
+    server.Post("/query", [this](const httplib::Request &req, httplib::Response &res) {
+        queryHandler(req, res);
     });
 }
 
@@ -98,6 +105,41 @@ void HttpServer::insertHandler(const httplib::Request &req, httplib::Response &r
     rapidjson::Document json_response;
     json_response.SetObject();
     auto &allocator = json_response.GetAllocator();
+    json_response.AddMember("retCode", 0, allocator);
+    setJsonResponse(json_response, res);
+}
+
+void HttpServer::upsertHandler(const httplib::Request &req, httplib::Response &res) {
+    rapidjson::Document json_request;
+    json_request.Parse(req.body.c_str());
+
+    GlobalLogger->info("Upsert request parameters: {}", req.body);
+
+    uint64_t label = json_request["id"].GetUint64();
+    auto indexType = getIndexTypeFromRequest(json_request);
+    vector_database_->upsert(label, json_request, indexType);
+
+    rapidjson::Document json_response;
+    json_response.SetObject();
+    auto &allocator = json_response.GetAllocator();
+    json_response.AddMember("retCode", 0, allocator);
+    setJsonResponse(json_response, res);
+}
+
+void HttpServer::queryHandler(const httplib::Request &req, httplib::Response &res) {
+    rapidjson::Document json_request;
+    json_request.Parse(req.body.c_str());
+
+    GlobalLogger->info("Query request parameters: {}", req.body);
+
+    uint64_t label = json_request["id"].GetUint64();
+    rapidjson::Document json_data = vector_database_->query(label);
+
+    rapidjson::Document json_response;
+    json_response.SetObject();
+    auto &allocator = json_response.GetAllocator();
+    for (auto it = json_data.MemberBegin(); it != json_data.MemberEnd(); ++it)
+        json_response.AddMember(it->name, it->value, allocator);
     json_response.AddMember("retCode", 0, allocator);
     setJsonResponse(json_response, res);
 }

@@ -6,11 +6,12 @@
 
 #include "httplib.h"
 #include "IndexFactory.h"
+#include "VectorDatabase.h"
 #include "rapidjson/document.h"
 
 class HttpServer {
 public:
-    HttpServer(std::string host, int port);
+    HttpServer(std::string host, int port, VectorDatabase *vector_database);
 
     void start() { server.listen(host, port); }
 
@@ -18,10 +19,15 @@ private:
     httplib::Server server;
     std::string host;
     int port;
+    VectorDatabase *vector_database_;
 
     void searchHandler(const httplib::Request &req, httplib::Response &res);
 
     void insertHandler(const httplib::Request &req, httplib::Response &res);
+
+    void upsertHandler(const httplib::Request &req, httplib::Response &res);
+
+    void queryHandler(const httplib::Request &req, httplib::Response &res);
 
     IndexFactory::IndexType getIndexTypeFromRequest(const rapidjson::Document &json_request);
 
