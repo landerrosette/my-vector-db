@@ -21,6 +21,7 @@ void ScalarStorage::insert_scalar(uint64_t id, const rapidjson::Document &data) 
 rapidjson::Document ScalarStorage::get_scalar(uint64_t id) {
     std::string value;
     auto status = db_->Get(rocksdb::ReadOptions(), std::to_string(id), &value);
+    if (!status.ok()) return {};
     rapidjson::Document data;
     data.Parse(value.c_str());
     rapidjson::StringBuffer buffer;

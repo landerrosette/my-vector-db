@@ -13,12 +13,8 @@ void VectorDatabase::upsert(uint64_t id, const rapidjson::Document &data, IndexF
     data.Accept(writer);
     GlobalLogger->debug("Upserting data: {}", buffer.GetString());
 
-    rapidjson::Document existingData;
-    try {
-        existingData = scalar_storage_.get_scalar(id);
-    } catch (std::runtime_error &e) {
-        GlobalLogger->debug("No existing data found for ID: {}", id);
-    }
+    rapidjson::Document existingData = scalar_storage_.get_scalar(id);
+    GlobalLogger->debug("No existing data found for ID: {}, creating new entry", id);
 
     if (existingData.IsObject()) {
         // If the data already exists, we need to remove it from the index
