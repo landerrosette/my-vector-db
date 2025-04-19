@@ -18,6 +18,7 @@ add_executable(myVectorDB
         HttpServer.cpp
         logger.cpp
         HNSWLibIndex.cpp
+        ScalarStorage.cpp
 )
 
 target_include_directories(myVectorDB PRIVATE
