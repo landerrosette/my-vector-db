@@ -3,7 +3,19 @@ project(myVectorDB)
 
 set(CMAKE_CXX_STANDARD 20)
 
-include(FetchContent)
+add_executable(myVectorDB
+        src/main.cpp
+        src/FaissIndex.cpp
+        src/IndexFactory.cpp
+        src/HttpServer.cpp
+        src/logger.cpp
+        src/HNSWLibIndex.cpp
+        src/ScalarStorage.cpp
+        src/VectorDatabase.cpp
+        src/FilterIndex.cpp
+)
+
+target_include_directories(myVectorDB PRIVATE include)
 
 find_package(OpenMP REQUIRED)
 find_package(faiss REQUIRED)
