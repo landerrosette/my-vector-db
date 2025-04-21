@@ -15,7 +15,7 @@ add_executable(myVectorDB
         src/FilterIndex.cpp
 )
 
-target_include_directories(myVectorDB PRIVATE include)
+target_include_directories(myVectorDB PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 find_package(OpenMP REQUIRED)
 find_package(faiss REQUIRED)
