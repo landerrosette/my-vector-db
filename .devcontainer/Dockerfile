@@ -28,7 +28,7 @@ WORKDIR /tmp
 RUN wget -q https://github.com/facebookresearch/faiss/archive/refs/tags/v1.10.0.tar.gz \
     && tar -xzf v1.10.0.tar.gz \
     && cd faiss-1.10.0 \
-    && cmake -B build . -DFAISS_ENABLE_GPU=OFF -DFAISS_ENABLE_PYTHON=OFF -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release \
+    && cmake -B build . -DFAISS_ENABLE_GPU=OFF -DFAISS_ENABLE_PYTHON=OFF -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
     && make -C build -j$(nproc) faiss \
     && make -C build install \
     && cd /tmp \
@@ -57,3 +57,14 @@ RUN wget https://github.com/gabime/spdlog/archive/refs/tags/v1.15.2.tar.gz \
     && cd /tmp \
     && rm v1.15.2.tar.gz \
     && rm -rf spdlog-1.15.2
+
+# Install CRoaring
+WORKDIR /tmp
+RUN wget https://github.com/RoaringBitmap/CRoaring/archive/refs/tags/v4.3.1.tar.gz \
+    && tar -xzf v4.3.1.tar.gz \
+    && cd CRoaring-4.3.1 \
+    && cmake -B build . -DENABLE_ROARING_TESTS=OFF -DROARING_BUILD_STATIC=ON \
+    && make -C build -j$(nproc) install \
+    && cd /tmp \
+    && rm v4.3.1.tar.gz \
+    && rm -rf CRoaring-4.3.1
