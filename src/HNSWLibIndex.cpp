@@ -1,4 +1,5 @@
 #include "HNSWLibIndex.h"
+
 #include <stdexcept>
 
 HNSWLibIndex::HNSWLibIndex(int dim, int num_data, IndexFactory::MetricType metric, int M,

@@ -7,6 +7,7 @@
 #include <vector>
 #include <faiss/Index.h>
 #include <faiss/impl/IDSelector.h>
+
 #include "roaring/roaring.h"
 
 class FaissIndex {

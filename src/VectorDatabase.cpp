@@ -1,11 +1,18 @@
 #include "VectorDatabase.h"
+
+#include <cstdint>
+#include <cstdlib>
+#include <string>
 #include <vector>
+
 #include "FaissIndex.h"
+#include "FilterIndex.h"
+#include "HNSWLibIndex.h"
 #include "IndexFactory.h"
 #include "logger.h"
+#include "utils.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-#include "HNSWLibIndex.h"
 
 void VectorDatabase::upsert(uint64_t id, const rapidjson::Document &data, IndexFactory::IndexType index_type) {
     rapidjson::StringBuffer buffer;

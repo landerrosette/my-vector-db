@@ -2,10 +2,11 @@
 #define FILTERINDEX_H
 
 
-#include <string>
 #include <cstdint>
-#include "roaring/roaring.h"
 #include <map>
+#include <string>
+
+#include "roaring/roaring.h"
 
 class FilterIndex {
 public:

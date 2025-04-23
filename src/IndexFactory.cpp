@@ -4,8 +4,8 @@
 #include <faiss/IndexIDMap.h>
 
 #include "FaissIndex.h"
-#include "HNSWLibIndex.h"
 #include "FilterIndex.h"
+#include "HNSWLibIndex.h"
 
 namespace {
     IndexFactory globalIndexFactory;

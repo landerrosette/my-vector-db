@@ -1,4 +1,5 @@
 #include "FilterIndex.h"
+
 #include "logger.h"
 
 void FilterIndex::addIntFieldFilter(const std::string &fieldname, int64_t value, uint64_t id) {

@@ -1,8 +1,10 @@
 #include "ScalarStorage.h"
+
+#include <string>
+
+#include "logger.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-#include <string>
-#include "logger.h"
 
 ScalarStorage::ScalarStorage(const std::string &db_path) {
     rocksdb::Options options;

@@ -1,5 +1,7 @@
 #include "FaissIndex.h"
+
 #include <faiss/IndexIDMap.h>
+
 #include "logger.h"
 
 void FaissIndex::insert_vectors(const std::vector<float> &data, uint64_t label) {

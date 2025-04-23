@@ -2,10 +2,11 @@
 #define HNSWLIBINDEX_H
 
 
-#include "IndexFactory.h"
-#include <vector>
 #include <cstdint>
 #include <utility>
+#include <vector>
+
+#include "IndexFactory.h"
 #include "hnswlib/hnswlib.h"
 #include "roaring/roaring.h"
 

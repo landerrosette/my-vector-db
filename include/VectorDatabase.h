@@ -2,11 +2,13 @@
 #define VECTORDATABASE_H
 
 
+#include <cstdint>
 #include <string>
+#include <utility>
+
+#include "IndexFactory.h"
 #include "ScalarStorage.h"
 #include "rapidjson/document.h"
-#include <cstdint>
-#include "IndexFactory.h"
 
 class VectorDatabase {
 public:

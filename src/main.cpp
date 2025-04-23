@@ -1,8 +1,9 @@
+#include <string>
+
 #include "HttpServer.h"
 #include "IndexFactory.h"
 #include "logger.h"
 #include "VectorDatabase.h"
-#include <string>
 
 int main() {
     init_global_logger();

@@ -2,10 +2,11 @@
 #define SCALARSTORAGE_H
 
 
-#include <rocksdb/db.h>
-#include <string>
 #include <cstdint>
+#include <string>
 #include <vector>
+#include <rocksdb/db.h>
+
 #include "rapidjson/document.h"
 
 class ScalarStorage {
