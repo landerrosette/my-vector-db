@@ -7,11 +7,16 @@ void FaissIndex::insert_vectors(const std::vector<float> &data, uint64_t label) 
     index->add_with_ids(1, data.data(), &id);
 }
 
-std::pair<std::vector<long>, std::vector<float> > FaissIndex::search_vectors(const std::vector<float> &query, int k) {
+std::pair<std::vector<long>, std::vector<float> > FaissIndex::search_vectors(
+    const std::vector<float> &query, int k, const roaring_bitmap_t *bitmap) {
     int dim = index->d;
     int num_queries = query.size() / dim;
     std::vector<long> indices(num_queries * k);
     std::vector<float> distances(num_queries * k);
+
+    faiss::SearchParameters search_params;
+    RoaringBitmapIDSelector selector(bitmap);
+    if (bitmap) search_params.sel = &selector;
 
     index->search(num_queries, query.data(), k, distances.data(), indices.data());
     GlobalLogger->debug("Retrieved values:");
