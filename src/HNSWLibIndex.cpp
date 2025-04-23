@@ -9,16 +9,20 @@ HNSWLibIndex::HNSWLibIndex(int dim, int num_data, IndexFactory::MetricType metri
 }
 
 std::pair<std::vector<long>, std::vector<float> > HNSWLibIndex::search_vectors(const std::vector<float> &query, int k,
+                                                                               const roaring_bitmap_t *bitmap,
                                                                                int ef_search) {
     index->setEf(ef_search);
-    auto result = index->searchKnn(query.data(), k);
-    std::vector<long> indices(k);
-    std::vector<float> distances(k);
-    for (int i = 0; i < k; ++i) {
+    RoaringBitmapIDFilter selector(bitmap);
+
+    auto result = index->searchKnn(query.data(), k, bitmap ? selector : nullptr);
+    std::vector<long> indices;
+    std::vector<float> distances;
+    while (!result.empty()) {
         auto item = result.top();
-        indices[i] = item.second;
-        distances[i] = item.first;
+        indices.push_back(item.second);
+        distances.push_back(item.first);
         result.pop();
     }
+
     return {indices, distances};
 }
