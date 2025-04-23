@@ -18,7 +18,7 @@ std::pair<std::vector<long>, std::vector<float> > FaissIndex::search_vectors(
     RoaringBitmapIDSelector selector(bitmap);
     if (bitmap) search_params.sel = &selector;
 
-    index->search(num_queries, query.data(), k, distances.data(), indices.data());
+    index->search(num_queries, query.data(), k, distances.data(), indices.data(), &search_params);
     GlobalLogger->debug("Retrieved values:");
     for (int i = 0; i < indices.size(); ++i) {
         if (indices[i] == -1) continue;
