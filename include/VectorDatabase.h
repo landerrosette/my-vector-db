@@ -18,6 +18,8 @@ public:
 
     rapidjson::Document query(uint64_t id) { return scalar_storage_.get_scalar(id); }
 
+    std::pair<std::vector<long>, std::vector<float>> search(const rapidjson::Document &json_request);
+
 private:
     ScalarStorage scalar_storage_;
 };

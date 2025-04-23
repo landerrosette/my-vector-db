@@ -18,14 +18,13 @@ void FilterIndex::getIntFieldFilterBitmap(const std::string &fieldname, Operatio
             auto bitmap_it = value_map.find(value);
             if (bitmap_it != value_map.end()) {
                 roaring_bitmap_or_inplace(result_bitmap, bitmap_it->second);
-                GlobalLogger->debug("Retrieved EQUAL bitmap for field: {}, value: {}", fieldname, value);
+                GlobalLogger->debug("Retrieved EQUAL bitmap for field: {}, value: {}", fieldName, value);
             }
         } else if (op == Operation::NOT_EQUAL) {
-            for (const auto &entry: value_map) {
-                if (entry.first != value)
-                    roaring_bitmap_or_inplace(result_bitmap, entry.second);
+            for (const auto &[first, second]: value_map) {
+                if (first != value) roaring_bitmap_or_inplace(result_bitmap, second);
             }
-            GlobalLogger->debug("Retrieved NOT_EQUAL bitmap for field: {}, value: {}", fieldname, value);
+            GlobalLogger->debug("Retrieved NOT_EQUAL bitmap for field: {}, value: {}", fieldName, value);
         }
     }
 }

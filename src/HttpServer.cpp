@@ -39,34 +39,17 @@ void HttpServer::searchHandler(const httplib::Request &req, httplib::Response &r
         query.push_back(q.GetFloat());
     int k = json_request["k"].GetInt();
 
-    auto indexType = getIndexTypeFromRequest(json_request);
-    void *index = getGlobalIndexFactory()->getIndex(indexType);
-
-    std::pair<std::vector<long>, std::vector<float> > results;
-    switch (indexType) {
-        case IndexFactory::IndexType::FLAT: {
-            auto *faissIndex = static_cast<FaissIndex *>(index);
-            results = faissIndex->search_vectors(query, k);
-            break;
-        }
-        case IndexFactory::IndexType::HNSW: {
-            auto *hnswIndex = static_cast<HNSWLibIndex *>(index);
-            results = hnswIndex->search_vectors(query, k);
-            break;
-        }
-        default:
-            break;
-    }
+    auto [first, second] = vector_database_->search(json_request);
 
     rapidjson::Document json_response;
     json_response.SetObject();
     auto &allocator = json_response.GetAllocator();
     rapidjson::Value vectors(rapidjson::kArrayType);
     rapidjson::Value distances(rapidjson::kArrayType);
-    for (int i = 0; i < results.first.size(); ++i) {
-        if (results.first[i] == -1) continue;
-        vectors.PushBack(results.first[i], allocator);
-        distances.PushBack(results.second[i], allocator);
+    for (int i = 0; i < first.size(); ++i) {
+        if (first[i] == -1) continue;
+        vectors.PushBack(first[i], allocator);
+        distances.PushBack(second[i], allocator);
     }
     json_response.AddMember("vectors", vectors, allocator);
     json_response.AddMember("distances", distances, allocator);

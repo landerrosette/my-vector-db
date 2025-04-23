@@ -61,3 +61,47 @@ void VectorDatabase::upsert(uint64_t id, const rapidjson::Document &data, IndexF
 
     scalar_storage_.insert_scalar(id, data);
 }
+
+std::pair<std::vector<long>, std::vector<float> > VectorDatabase::search(const rapidjson::Document &json_request) {
+    std::vector<float> query;
+    for (const auto &q: json_request["vectors"].GetArray())
+        query.push_back(q.GetFloat());
+    int k = json_request["k"].GetInt();
+
+    auto indexType = getIndexTypeFromRequest(json_request);
+    void *index = getGlobalIndexFactory()->getIndex(indexType);
+
+    // Create a bitmap for filtering
+    roaring_bitmap_t *filter_bitmap = nullptr;
+    if (json_request.HasMember("filter") && json_request["filter"].IsObject()) {
+        const auto &filter = json_request["filter"];
+        std::string fieldName = filter["fieldName"].GetString();
+        std::string op_str = filter["op"].GetString();
+        int64_t value = filter["value"].GetInt64();
+        auto op = op_str == "=" ? FilterIndex::Operation::EQUAL : FilterIndex::Operation::NOT_EQUAL;
+        auto *filter_index = static_cast<FilterIndex *>(getGlobalIndexFactory()->getIndex(
+            IndexFactory::IndexType::FILTER));
+        filter_bitmap = roaring_bitmap_create();
+        filter_index->getIntFieldFilterBitmap(fieldName, op, value, filter_bitmap);
+    }
+
+    std::pair<std::vector<long>, std::vector<float> > results;
+    switch (indexType) {
+        case IndexFactory::IndexType::FLAT: {
+            auto *faiss_index = static_cast<FaissIndex *>(index);
+            results = faiss_index->search_vectors(query, k, filter_bitmap);
+            break;
+        }
+        case IndexFactory::IndexType::HNSW: {
+            auto *hnsw_index = static_cast<HNSWLibIndex *>(index);
+            results = hnsw_index->search_vectors(query, k, filter_bitmap);
+            break;
+        }
+        default:
+            break;
+    }
+
+    delete filter_bitmap;
+
+    return results;
+}
