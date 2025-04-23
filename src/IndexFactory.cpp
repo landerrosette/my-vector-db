@@ -5,6 +5,7 @@
 
 #include "FaissIndex.h"
 #include "HNSWLibIndex.h"
+#include "FilterIndex.h"
 
 namespace {
     IndexFactory globalIndexFactory;
@@ -18,6 +19,9 @@ void IndexFactory::init(IndexType type, int dim, int num_data, MetricType metric
             break;
         case IndexType::HNSW:
             index_map[type] = new HNSWLibIndex(dim, num_data, metric, 16, 200);
+            break;
+        case IndexType::FILTER:
+            index_map[type] = new FilterIndex();
             break;
         default:
             break;
