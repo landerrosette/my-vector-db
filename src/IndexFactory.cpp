@@ -30,8 +30,7 @@ void IndexFactory::init(IndexType type, int dim, int num_data, MetricType metric
 
 void *IndexFactory::getIndex(IndexType type) const {
     auto it = index_map.find(type);
-    if (it != index_map.end())
-        return it->second;
+    if (it != index_map.end()) return it->second;
     return nullptr;
 }
 

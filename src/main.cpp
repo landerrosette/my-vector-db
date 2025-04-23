@@ -15,6 +15,7 @@ int main() {
     IndexFactory *globalIndexFactory = getGlobalIndexFactory();
     globalIndexFactory->init(IndexFactory::IndexType::FLAT, dim);
     globalIndexFactory->init(IndexFactory::IndexType::HNSW, dim, num_data);
+    globalIndexFactory->init(IndexFactory::IndexType::FILTER);
     GlobalLogger->info("Global index factory initialized");
 
     std::string db_path = "scalar_storage.db";
