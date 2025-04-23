@@ -29,8 +29,6 @@ private:
 
     void queryHandler(const httplib::Request &req, httplib::Response &res);
 
-    IndexFactory::IndexType getIndexTypeFromRequest(const rapidjson::Document &json_request);
-
     void setJsonResponse(const rapidjson::Document &json_response, httplib::Response &res);
 };
 

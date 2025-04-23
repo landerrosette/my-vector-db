@@ -8,6 +8,7 @@
 #include "HNSWLibIndex.h"
 #include "IndexFactory.h"
 #include "logger.h"
+#include "utils.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 
@@ -142,17 +143,6 @@ void HttpServer::queryHandler(const httplib::Request &req, httplib::Response &re
         json_response.AddMember(it->name, it->value, allocator);
     json_response.AddMember("retCode", 0, allocator);
     setJsonResponse(json_response, res);
-}
-
-IndexFactory::IndexType HttpServer::getIndexTypeFromRequest(const rapidjson::Document &json_request) {
-    if (json_request.HasMember("indexType")) {
-        std::string index_type_string = json_request["indexType"].GetString();
-        if (index_type_string == "FLAT")
-            return IndexFactory::IndexType::FLAT;
-        else if (index_type_string == "HNSW")
-            return IndexFactory::IndexType::HNSW;
-    }
-    return IndexFactory::IndexType::UNKNOWN;
 }
 
 void HttpServer::setJsonResponse(const rapidjson::Document &json_response, httplib::Response &res) {
