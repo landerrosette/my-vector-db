@@ -19,6 +19,8 @@ public:
 
     void addIntFieldFilter(const std::string &fieldName, int64_t value, uint64_t id);
 
+    void updateIntFieldFilter(const std::string &fieldName, const int64_t *old_value, int64_t new_value, uint64_t id);
+
     void getIntFieldFilterBitmap(const std::string &fieldName, Operation op, int64_t value,
                                  roaring_bitmap_t *result_bitmap);
 

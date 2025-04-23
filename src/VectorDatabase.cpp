@@ -20,11 +20,12 @@ void VectorDatabase::upsert(uint64_t id, const rapidjson::Document &data, IndexF
     data.Accept(writer);
     GlobalLogger->debug("Upserting data: {}", buffer.GetString());
 
+    // Check if the ID already exists
     rapidjson::Document existingData = scalar_storage_.get_scalar(id);
     GlobalLogger->debug("No existing data found for ID: {}, creating new entry", id);
 
+    // Remove the existing vector from the index if it exists
     if (existingData.IsObject()) {
-        // If the data already exists, we need to remove it from the index
         std::vector<float> existingVector(existingData["vectors"].Size());
         for (rapidjson::SizeType i = 0; i < existingData["vectors"].Size(); ++i)
             existingVector[i] = existingData["vectors"][i].GetFloat();
@@ -40,6 +41,7 @@ void VectorDatabase::upsert(uint64_t id, const rapidjson::Document &data, IndexF
         }
     }
 
+    // Insert the new vector into the index
     std::vector<float> newVector(data["vectors"].Size());
     for (rapidjson::SizeType i = 0; i < data["vectors"].Size(); ++i)
         newVector[i] = data["vectors"][i].GetFloat();
@@ -59,6 +61,24 @@ void VectorDatabase::upsert(uint64_t id, const rapidjson::Document &data, IndexF
             break;
     }
 
+    // Update the filter index
+    FilterIndex *filter_index = static_cast<FilterIndex *>(getGlobalIndexFactory()->getIndex(
+        IndexFactory::IndexType::FILTER));
+    for (auto it = data.MemberBegin(); it != data.MemberEnd(); ++it) {
+        std::string field_name = it->name.GetString();
+        if (field_name != "id" && it->value.IsInt()) {
+            int64_t field_value = it->value.GetInt64();
+            int64_t *old_field_value_p = nullptr;
+            if (existingData.IsObject()) {
+                old_field_value_p = static_cast<int64_t *>(malloc(sizeof(int64_t)));
+                *old_field_value_p = existingData[field_name.c_str()].GetInt64();
+            }
+            filter_index->updateIntFieldFilter(field_name, old_field_value_p, field_value, id);
+            delete old_field_value_p;
+        }
+    }
+
+    // Update the scalar storage with the new data
     scalar_storage_.insert_scalar(id, data);
 }
 
