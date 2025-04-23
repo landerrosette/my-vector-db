@@ -21,10 +21,10 @@ std::pair<std::vector<long>, std::vector<float> > FaissIndex::search_vectors(
     if (bitmap) search_params.sel = &selector;
 
     index->search(num_queries, query.data(), k, distances.data(), indices.data(), &search_params);
-    GlobalLogger->debug("Retrieved values:");
+    // GlobalLogger->debug("Retrieved values:");
     for (int i = 0; i < indices.size(); ++i) {
         if (indices[i] == -1) continue;
-        GlobalLogger->debug("ID: {}, Distance: {}", indices[i], distances[i]);
+        // GlobalLogger->debug("ID: {}, Distance: {}", indices[i], distances[i]);
     }
 
     return {indices, distances};
