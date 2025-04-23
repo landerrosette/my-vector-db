@@ -13,9 +13,10 @@ std::pair<std::vector<long>, std::vector<float> > HNSWLibIndex::search_vectors(c
                                                                                const roaring_bitmap_t *bitmap,
                                                                                int ef_search) {
     index->setEf(ef_search);
+
     RoaringBitmapIDFilter selector(bitmap);
 
-    auto result = index->searchKnn(query.data(), k, bitmap ? selector : nullptr);
+    auto result = index->searchKnn(query.data(), k, bitmap ? &selector : nullptr);
     std::vector<long> indices;
     std::vector<float> distances;
     while (!result.empty()) {
