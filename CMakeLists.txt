@@ -13,6 +13,7 @@ add_executable(myVectorDB
         src/ScalarStorage.cpp
         src/VectorDatabase.cpp
         src/FilterIndex.cpp
+        src/utils.cpp
 )
 
 target_include_directories(myVectorDB PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
