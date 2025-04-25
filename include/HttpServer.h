@@ -5,13 +5,12 @@
 #include <string>
 
 #include "httplib.h"
-#include "IndexFactory.h"
 #include "VectorDatabase.h"
 #include "rapidjson/document.h"
 
 class HttpServer {
 public:
-    HttpServer(std::string host, int port, VectorDatabase *vector_database);
+    HttpServer(std::string host, int port, VectorDatabase &vector_database);
 
     void start() { server.listen(host, port); }
 
@@ -19,7 +18,7 @@ private:
     httplib::Server server;
     std::string host;
     int port;
-    VectorDatabase *vector_database_;
+    VectorDatabase &vector_database;
 
     void searchHandler(const httplib::Request &req, httplib::Response &res);
 

@@ -2,37 +2,39 @@
 #define FAISSINDEX_H
 
 
-#include <cstdint>
+#include <functional>
+#include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 #include <faiss/Index.h>
 #include <faiss/impl/IDSelector.h>
 
-#include "roaring/roaring.h"
+#include "roaring/roaring.hh"
 
 class FaissIndex {
 public:
-    explicit FaissIndex(faiss::Index *index) : index(index) {}
+    explicit FaissIndex(std::unique_ptr<faiss::Index> index) : index(std::move(index)) {}
 
-    void insert_vectors(const std::vector<float> &data, uint64_t label);
+    void insert_vectors(const std::vector<float> &data, uint32_t id);
 
-    std::pair<std::vector<long>, std::vector<float> > search_vectors(const std::vector<float> &query, int k,
-                                                                     const roaring_bitmap_t *bitmap = nullptr);
+    std::pair<std::vector<uint32_t>, std::vector<float> > search_vectors(
+        const std::vector<float> &query, int k,
+        std::optional<std::reference_wrapper<const roaring::Roaring> > bitmap = std::nullopt);
 
-    void remove_vectors(const std::vector<long> &ids);
+    void remove_vectors(const std::vector<uint32_t> &ids);
 
 private:
-    faiss::Index *index;
+    std::unique_ptr<faiss::Index> index;
 };
 
-struct RoaringBitmapIDSelector : faiss::IDSelector {
-    explicit RoaringBitmapIDSelector(const roaring_bitmap_t *bitmap) : bitmap_(bitmap) {}
+struct RoaringBitmapIDSelector : public faiss::IDSelector {
+    explicit RoaringBitmapIDSelector(const roaring::Roaring &bitmap) : bitmap(bitmap) {}
 
-    bool is_member(int64_t id) const final { return roaring_bitmap_contains(bitmap_, static_cast<uint32_t>(id)); }
+    bool is_member(faiss::idx_t id) const final { return bitmap.contains(id); }
 
-    ~RoaringBitmapIDSelector() override = default;
-
-    const roaring_bitmap_t *bitmap_;
+private:
+    const roaring::Roaring &bitmap;
 };
 
 

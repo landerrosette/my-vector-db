@@ -4,34 +4,37 @@
 
 #include "logger.h"
 
-void FaissIndex::insert_vectors(const std::vector<float> &data, uint64_t label) {
-    long id = static_cast<long>(label);
-    index->add_with_ids(1, data.data(), &id);
+void FaissIndex::insert_vectors(const std::vector<float> &data, uint32_t id) {
+    faiss::idx_t faiss_idx = id;
+    index->add_with_ids(1, data.data(), &faiss_idx);
 }
 
-std::pair<std::vector<long>, std::vector<float> > FaissIndex::search_vectors(
-    const std::vector<float> &query, int k, const roaring_bitmap_t *bitmap) {
+std::pair<std::vector<uint32_t>, std::vector<float> > FaissIndex::search_vectors(
+    const std::vector<float> &query, int k, std::optional<std::reference_wrapper<const roaring::Roaring> > bitmap) {
     int dim = index->d;
     int num_queries = query.size() / dim;
-    std::vector<long> indices(num_queries * k);
+    std::vector<faiss::idx_t> indices(num_queries * k);
     std::vector<float> distances(num_queries * k);
 
     faiss::SearchParameters search_params;
-    RoaringBitmapIDSelector selector(bitmap);
-    if (bitmap) search_params.sel = &selector;
-
-    index->search(num_queries, query.data(), k, distances.data(), indices.data(), &search_params);
-    // GlobalLogger->debug("Retrieved values:");
-    for (int i = 0; i < indices.size(); ++i) {
-        if (indices[i] == -1) continue;
-        // GlobalLogger->debug("ID: {}, Distance: {}", indices[i], distances[i]);
+    std::optional<RoaringBitmapIDSelector> selector;
+    if (bitmap) {
+        selector.emplace(*bitmap);
+        search_params.sel = &*selector;
     }
 
-    return {indices, distances};
+    index->search(num_queries, query.data(), k, distances.data(), indices.data(), &search_params);
+    std::vector<uint32_t> ids;
+    for (const auto &idx: indices) {
+        if (idx == -1) continue;
+        ids.push_back(static_cast<uint32_t>(idx));
+    }
+
+    return {ids, distances};
 }
 
-void FaissIndex::remove_vectors(const std::vector<long> &ids) {
-    auto *id_map = dynamic_cast<faiss::IndexIDMap *>(index);
-    faiss::IDSelectorBatch selector(ids.size(), ids.data());
-    id_map->remove_ids(selector);
+void FaissIndex::remove_vectors(const std::vector<uint32_t> &ids) {
+    std::vector<faiss::idx_t> indices(ids.begin(), ids.end());
+    faiss::IDSelectorBatch selector(ids.size(), indices.data());
+    index->remove_ids(selector);
 }

@@ -1,7 +1,6 @@
 #include "VectorDatabase.h"
 
-#include <cstdint>
-#include <cstdlib>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -14,47 +13,42 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 
-void VectorDatabase::upsert(uint64_t id, const rapidjson::Document &data, IndexFactory::IndexType index_type) {
+void VectorDatabase::upsert(uint32_t id, const rapidjson::Document &data, IndexFactory::IndexType index_type) {
     rapidjson::StringBuffer buffer;
     rapidjson::Writer writer(buffer);
     data.Accept(writer);
-    GlobalLogger->debug("Upserting data: {}", buffer.GetString());
-
-    // Check if the ID already exists
-    rapidjson::Document existingData = scalar_storage_.get_scalar(id);
-    GlobalLogger->debug("No existing data found for ID: {}, creating new entry", id);
+    global_logger->debug("Upserting data: {}", buffer.GetString());
 
     // Remove the existing vector from the index if it exists
-    if (existingData.IsObject()) {
-        std::vector<float> existingVector(existingData["vectors"].Size());
-        for (rapidjson::SizeType i = 0; i < existingData["vectors"].Size(); ++i)
-            existingVector[i] = existingData["vectors"][i].GetFloat();
-        void *index = getGlobalIndexFactory()->getIndex(index_type);
+    rapidjson::Document existing_data = scalar_storage.get_scalar(id);
+    if (existing_data.IsObject()) {
+        std::vector<float> existing_vector(existing_data["vectors"].Size());
+        for (rapidjson::SizeType i = 0; i < existing_data["vectors"].Size(); ++i)
+            existing_vector[i] = existing_data["vectors"][i].GetFloat();
         switch (index_type) {
             case IndexFactory::IndexType::FLAT: {
-                auto *faiss_index = static_cast<FaissIndex *>(index);
-                faiss_index->remove_vectors({static_cast<long>(id)});
+                auto *index = get_global_index_factory().get_index<FaissIndex>(index_type);
+                index->remove_vectors({id});
                 break;
             }
             default:
                 break;
         }
-    }
+    } else global_logger->debug("No existing data found for ID: {}, creating new entry", id);
 
     // Insert the new vector into the index
-    std::vector<float> newVector(data["vectors"].Size());
+    std::vector<float> new_vector(data["vectors"].Size());
     for (rapidjson::SizeType i = 0; i < data["vectors"].Size(); ++i)
-        newVector[i] = data["vectors"][i].GetFloat();
-    void *index = getGlobalIndexFactory()->getIndex(index_type);
+        new_vector[i] = data["vectors"][i].GetFloat();
     switch (index_type) {
         case IndexFactory::IndexType::FLAT: {
-            auto *faiss_index = static_cast<FaissIndex *>(index);
-            faiss_index->insert_vectors(newVector, id);
+            auto *index = get_global_index_factory().get_index<FaissIndex>(index_type);
+            index->insert_vectors(new_vector, id);
             break;
         }
         case IndexFactory::IndexType::HNSW: {
-            auto *hnsw_index = static_cast<HNSWLibIndex *>(index);
-            hnsw_index->insert_vectors(newVector, id);
+            auto *index = get_global_index_factory().get_index<HNSWLibIndex>(index_type);
+            index->insert_vectors(new_vector, id);
             break;
         }
         default:
@@ -62,66 +56,54 @@ void VectorDatabase::upsert(uint64_t id, const rapidjson::Document &data, IndexF
     }
 
     // Update the filter index
-    FilterIndex *filter_index = static_cast<FilterIndex *>(getGlobalIndexFactory()->getIndex(
-        IndexFactory::IndexType::FILTER));
-    for (auto it = data.MemberBegin(); it != data.MemberEnd(); ++it) {
-        std::string field_name = it->name.GetString();
-        if (field_name != "id" && it->value.IsInt()) {
-            int64_t field_value = it->value.GetInt64();
-            int64_t *old_field_value_p = nullptr;
-            if (existingData.IsObject()) {
-                old_field_value_p = static_cast<int64_t *>(malloc(sizeof(int64_t)));
-                *old_field_value_p = existingData[field_name.c_str()].GetInt64();
-            }
-            filter_index->updateIntFieldFilter(field_name, old_field_value_p, field_value, id);
-            delete old_field_value_p;
+    auto *filter_index = get_global_index_factory().get_index<FilterIndex>(IndexFactory::IndexType::FILTER);
+    for (const auto &member: data.GetObject()) {
+        if (std::string field_name = member.name.GetString(); field_name != "id" && member.value.IsInt()) {
+            int field_value = member.value.GetInt();
+            std::optional<int> old_field_value;
+            if (existing_data.IsObject() && existing_data.HasMember(field_name.c_str()) && existing_data[field_name.
+                    c_str()].IsInt())
+                old_field_value = existing_data[field_name.c_str()].GetInt();
+            filter_index->update_int_field_filter(field_name, old_field_value, field_value, id);
         }
     }
 
     // Update the scalar storage with the new data
-    scalar_storage_.insert_scalar(id, data);
+    scalar_storage.insert_scalar(id, data);
 }
 
-std::pair<std::vector<long>, std::vector<float> > VectorDatabase::search(const rapidjson::Document &json_request) {
-    std::vector<float> query;
-    for (const auto &q: json_request["vectors"].GetArray())
-        query.push_back(q.GetFloat());
+std::pair<std::vector<uint32_t>, std::vector<float> > VectorDatabase::search(const rapidjson::Document &json_request) {
+    std::vector<float> query(json_request["vectors"].Size());
+    for (rapidjson::SizeType i = 0; i < json_request["vectors"].Size(); ++i)
+        query[i] = json_request["vectors"][i].GetFloat();
     int k = json_request["k"].GetInt();
 
-    auto indexType = getIndexTypeFromRequest(json_request);
-    void *index = getGlobalIndexFactory()->getIndex(indexType);
-
-    // Create a bitmap for filtering
-    roaring_bitmap_t *filter_bitmap = nullptr;
+    std::optional<roaring::Roaring> filter_bitmap;
     if (json_request.HasMember("filter") && json_request["filter"].IsObject()) {
         const auto &filter = json_request["filter"];
-        std::string fieldName = filter["fieldName"].GetString();
+        std::string field_name = filter["fieldName"].GetString();
         std::string op_str = filter["op"].GetString();
-        int64_t value = filter["value"].GetInt64();
+        int value = filter["value"].GetInt();
         auto op = op_str == "=" ? FilterIndex::Operation::EQUAL : FilterIndex::Operation::NOT_EQUAL;
-        auto *filter_index = static_cast<FilterIndex *>(getGlobalIndexFactory()->getIndex(
-            IndexFactory::IndexType::FILTER));
-        filter_bitmap = roaring_bitmap_create();
-        filter_index->getIntFieldFilterBitmap(fieldName, op, value, filter_bitmap);
+        auto *filter_index = get_global_index_factory().get_index<FilterIndex>(IndexFactory::IndexType::FILTER);
+        filter_bitmap = filter_index->get_int_field_filter_bitmap(field_name, op, value);
     }
 
-    std::pair<std::vector<long>, std::vector<float> > results;
-    switch (indexType) {
+    std::pair<std::vector<uint32_t>, std::vector<float> > results;
+    switch (auto index_type = get_index_type_from_request(json_request); index_type) {
         case IndexFactory::IndexType::FLAT: {
-            auto *faiss_index = static_cast<FaissIndex *>(index);
-            results = faiss_index->search_vectors(query, k, filter_bitmap);
+            auto *index = get_global_index_factory().get_index<FaissIndex>(index_type);
+            results = index->search_vectors(query, k, filter_bitmap);
             break;
         }
         case IndexFactory::IndexType::HNSW: {
-            auto *hnsw_index = static_cast<HNSWLibIndex *>(index);
-            results = hnsw_index->search_vectors(query, k, filter_bitmap);
+            auto *index = get_global_index_factory().get_index<HNSWLibIndex>(index_type);
+            results = index->search_vectors(query, k, filter_bitmap);
             break;
         }
         default:
             break;
     }
-
-    delete filter_bitmap;
 
     return results;
 }

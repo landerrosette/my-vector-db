@@ -2,12 +2,12 @@
 
 #include "spdlog/sinks/stdout_color_sinks.h"
 
-std::shared_ptr<spdlog::logger> GlobalLogger;
+std::shared_ptr<spdlog::logger> global_logger;
 
 void init_global_logger() {
-    GlobalLogger = spdlog::stdout_color_mt("GlobalLogger");
+    global_logger = spdlog::stdout_color_mt("global_logger");
 }
 
 void set_log_level(spdlog::level::level_enum level) {
-    GlobalLogger->set_level(level);
+    global_logger->set_level(level);
 }

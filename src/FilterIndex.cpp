@@ -2,60 +2,51 @@
 
 #include "logger.h"
 
-void FilterIndex::addIntFieldFilter(const std::string &fieldName, int64_t value, uint64_t id) {
-    roaring_bitmap_t *bitmap = roaring_bitmap_create();
-    roaring_bitmap_add(bitmap, id);
-    intFieldFilter[fieldName][value] = bitmap;
-    GlobalLogger->debug("Added int filter for field: {}, value: {}, id: {}", fieldName, value, id);
+void FilterIndex::add_int_field_filter(const std::string &field_name, int value, uint32_t id) {
+    int_field_filter[field_name][value].add(id);
+    global_logger->debug("Added int filter for field: {}, value: {}, id: {}", field_name, value, id);
 }
 
-void FilterIndex::updateIntFieldFilter(const std::string &fieldName, const int64_t *old_value, int64_t new_value,
-                                       uint64_t id) {
-    auto it = intFieldFilter.find(fieldName);
-    if (it != intFieldFilter.end()) {
+void FilterIndex::update_int_field_filter(const std::string &field_name, std::optional<int> old_value, int new_value,
+                                          uint32_t id) {
+    if (auto it = int_field_filter.find(field_name); it != int_field_filter.end()) {
         auto &value_map = it->second;
 
-        // Remove the old value bitmap if it exists
-        auto old_bitmap_it = old_value ? value_map.find(*old_value) : value_map.end();
-        if (old_bitmap_it != value_map.end()) roaring_bitmap_remove(old_bitmap_it->second, id);
-
-        // Look for the new value bitmap
-        auto new_bitmap_it = value_map.find(new_value);
-        if (new_bitmap_it == value_map.end()) {
-            // If it doesn't exist, create a new bitmap for the new value
-            roaring_bitmap_t *new_bitmap = roaring_bitmap_create();
-            value_map[new_value] = new_bitmap;
-            new_bitmap_it = value_map.find(new_value);
+        // Look for the bitmap for the old value and remove the id from it
+        if (old_value) {
+            auto old_bitmap_it = value_map.find(*old_value);
+            if (old_bitmap_it != value_map.end()) old_bitmap_it->second.remove(id);
         }
-        roaring_bitmap_add(new_bitmap_it->second, id);
 
-        if (old_value)
-            GlobalLogger->debug("Updated int filter for field: {}, old value: {}, new value: {}, id: {}", fieldName,
-                                *old_value, new_value, id);
-        else
-            GlobalLogger->debug("Updated int filter for field: {}, old value: null, new value: {}, id: {}", fieldName,
-                                new_value, id);
+        // Add the id to the new value
+        value_map[new_value].add(id);
+
+        global_logger->debug("Updated int filter for field: {}, old value: {}, new value: {}, id: {}", field_name,
+                             old_value ? std::to_string(*old_value) : "null", new_value, id);
     } else {
-        addIntFieldFilter(fieldName, new_value, id);
+        // If the field doesn't exist, create a new entry
+        add_int_field_filter(field_name, new_value, id);
     }
 }
 
-void FilterIndex::getIntFieldFilterBitmap(const std::string &fieldName, Operation op, int64_t value,
-                                          roaring_bitmap_t *result_bitmap) {
-    auto it = intFieldFilter.find(fieldName);
-    if (it != intFieldFilter.end()) {
+roaring::Roaring FilterIndex::get_int_field_filter_bitmap(const std::string &field_name, Operation op, int value) {
+    roaring::Roaring result_bitmap;
+    if (auto it = int_field_filter.find(field_name); it != int_field_filter.end()) {
         auto &value_map = it->second;
-        if (op == Operation::EQUAL) {
-            auto bitmap_it = value_map.find(value);
-            if (bitmap_it != value_map.end()) {
-                roaring_bitmap_or_inplace(result_bitmap, bitmap_it->second);
-                GlobalLogger->debug("Retrieved EQUAL bitmap for field: {}, value: {}", fieldName, value);
+        switch (op) {
+            case Operation::EQUAL: {
+                auto bitmap_it = value_map.find(value);
+                if (bitmap_it != value_map.end()) {
+                    result_bitmap = bitmap_it->second;
+                    global_logger->debug("Retrieved EQUAL bitmap for field: {}, value: {}", field_name, value);
+                }
             }
-        } else if (op == Operation::NOT_EQUAL) {
-            for (const auto &[first, second]: value_map) {
-                if (first != value) roaring_bitmap_or_inplace(result_bitmap, second);
-            }
-            GlobalLogger->debug("Retrieved NOT_EQUAL bitmap for field: {}, value: {}", fieldName, value);
+            case Operation::NOT_EQUAL:
+            default:
+                for (const auto &[v, bitmap]: value_map)
+                    if (v != value) result_bitmap |= bitmap;
+                global_logger->debug("Retrieved NOT_EQUAL bitmap for field: {}, value: {}", field_name, value);
         }
     }
+    return result_bitmap;
 }

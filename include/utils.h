@@ -5,7 +5,7 @@
 #include "IndexFactory.h"
 #include "rapidjson/document.h"
 
-IndexFactory::IndexType getIndexTypeFromRequest(const rapidjson::Document &json_request);
+IndexFactory::IndexType get_index_type_from_request(const rapidjson::Document &json_request);
 
 
 #endif //UTILS_H

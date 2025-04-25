@@ -1,6 +1,5 @@
 #include "HttpServer.h"
 
-#include <cstdint>
 #include <utility>
 #include <vector>
 
@@ -12,8 +11,8 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 
-HttpServer::HttpServer(std::string host, int port, VectorDatabase *vector_database) : host(std::move(host)), port(port),
-    vector_database_(vector_database) {
+HttpServer::HttpServer(std::string host, int port, VectorDatabase &vector_database) : host(std::move(host)), port(port),
+    vector_database(vector_database) {
     server.Post("/search", [this](const httplib::Request &req, httplib::Response &res) {
         searchHandler(req, res);
     });
@@ -32,24 +31,17 @@ void HttpServer::searchHandler(const httplib::Request &req, httplib::Response &r
     rapidjson::Document json_request;
     json_request.Parse(req.body.c_str());
 
-    GlobalLogger->info("Search request parameters: {}", req.body);
+    global_logger->info("Search request parameters: {}", req.body);
 
-    std::vector<float> query;
-    for (const auto &q: json_request["vectors"].GetArray())
-        query.push_back(q.GetFloat());
-    int k = json_request["k"].GetInt();
-
-    auto [first, second] = vector_database_->search(json_request);
+    auto [vecs, dists] = vector_database.search(json_request);
 
     rapidjson::Document json_response;
     json_response.SetObject();
     auto &allocator = json_response.GetAllocator();
-    rapidjson::Value vectors(rapidjson::kArrayType);
-    rapidjson::Value distances(rapidjson::kArrayType);
-    for (int i = 0; i < first.size(); ++i) {
-        if (first[i] == -1) continue;
-        vectors.PushBack(first[i], allocator);
-        distances.PushBack(second[i], allocator);
+    rapidjson::Value vectors(rapidjson::kArrayType), distances(rapidjson::kArrayType);
+    for (size_t i = 0; i < vecs.size(); ++i) {
+        vectors.PushBack(vecs[i], allocator);
+        distances.PushBack(dists[i], allocator);
     }
     json_response.AddMember("vectors", vectors, allocator);
     json_response.AddMember("distances", distances, allocator);
@@ -61,25 +53,22 @@ void HttpServer::insertHandler(const httplib::Request &req, httplib::Response &r
     rapidjson::Document json_request;
     json_request.Parse(req.body.c_str());
 
-    GlobalLogger->info("Insert request parameters: {}", req.body);
+    global_logger->info("Insert request parameters: {}", req.body);
 
-    std::vector<float> data;
-    for (const auto &d: json_request["vectors"].GetArray())
-        data.push_back(d.GetFloat());
-    uint64_t label = json_request["id"].GetUint64();
+    std::vector<float> data(json_request["vectors"].Size());
+    for (rapidjson::SizeType i = 0; i < json_request["vectors"].Size(); ++i)
+        data[i] = json_request["vectors"][i].GetFloat();
+    uint32_t id = json_request["id"].GetUint();
 
-    auto indexType = getIndexTypeFromRequest(json_request);
-    void *index = getGlobalIndexFactory()->getIndex(indexType);
-
-    switch (indexType) {
+    switch (auto index_type = get_index_type_from_request(json_request); index_type) {
         case IndexFactory::IndexType::FLAT: {
-            auto *faissIndex = static_cast<FaissIndex *>(index);
-            faissIndex->insert_vectors(data, label);
+            auto *index = get_global_index_factory().get_index<FaissIndex>(index_type);
+            index->insert_vectors(data, id);
             break;
         }
         case IndexFactory::IndexType::HNSW: {
-            auto *hnswIndex = static_cast<HNSWLibIndex *>(index);
-            hnswIndex->insert_vectors(data, label);
+            auto *index = get_global_index_factory().get_index<HNSWLibIndex>(index_type);
+            index->insert_vectors(data, id);
             break;
         }
         default:
@@ -97,11 +86,11 @@ void HttpServer::upsertHandler(const httplib::Request &req, httplib::Response &r
     rapidjson::Document json_request;
     json_request.Parse(req.body.c_str());
 
-    GlobalLogger->info("Upsert request parameters: {}", req.body);
+    global_logger->info("Upsert request parameters: {}", req.body);
 
-    uint64_t label = json_request["id"].GetUint64();
-    auto indexType = getIndexTypeFromRequest(json_request);
-    vector_database_->upsert(label, json_request, indexType);
+    uint32_t id = json_request["id"].GetUint();
+    auto index_type = get_index_type_from_request(json_request);
+    vector_database.upsert(id, json_request, index_type);
 
     rapidjson::Document json_response;
     json_response.SetObject();
@@ -114,16 +103,16 @@ void HttpServer::queryHandler(const httplib::Request &req, httplib::Response &re
     rapidjson::Document json_request;
     json_request.Parse(req.body.c_str());
 
-    GlobalLogger->info("Query request parameters: {}", req.body);
+    global_logger->info("Query request parameters: {}", req.body);
 
-    uint64_t label = json_request["id"].GetUint64();
-    rapidjson::Document json_data = vector_database_->query(label);
+    uint32_t id = json_request["id"].GetUint();
+    rapidjson::Document json_data = vector_database.query(id);
 
     rapidjson::Document json_response;
     json_response.SetObject();
     auto &allocator = json_response.GetAllocator();
-    for (auto it = json_data.MemberBegin(); it != json_data.MemberEnd(); ++it)
-        json_response.AddMember(it->name, it->value, allocator);
+    for (auto &member: json_data.GetObject())
+        json_response.AddMember(member.name, member.value, allocator);
     json_response.AddMember("retCode", 0, allocator);
     setJsonResponse(json_response, res);
 }

@@ -2,40 +2,39 @@
 #define HNSWLIBINDEX_H
 
 
-#include <cstdint>
+#include <functional>
+#include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
 #include "IndexFactory.h"
 #include "hnswlib/hnswlib.h"
-#include "roaring/roaring.h"
+#include "roaring/roaring.hh"
 
 class HNSWLibIndex {
 public:
     HNSWLibIndex(int dim, int num_data, IndexFactory::MetricType metric, int M = 16, int ef_construction = 200);
 
-    void insert_vectors(const std::vector<float> &data, uint64_t label) { index->addPoint(data.data(), label); }
+    void insert_vectors(const std::vector<float> &data, uint32_t id) { index->addPoint(data.data(), id); }
 
-    std::pair<std::vector<long>, std::vector<float> > search_vectors(const std::vector<float> &query, int k,
-                                                                     const roaring_bitmap_t *bitmap = nullptr,
-                                                                     int ef_search = 50);
+    std::pair<std::vector<uint32_t>, std::vector<float> > search_vectors(
+        const std::vector<float> &query, int k,
+        std::optional<std::reference_wrapper<const roaring::Roaring> > bitmap = std::nullopt, int ef_search = 50);
 
     class RoaringBitmapIDFilter : public hnswlib::BaseFilterFunctor {
     public:
-        explicit RoaringBitmapIDFilter(const roaring_bitmap_t *bitmap) : bitmap_(bitmap) {}
+        explicit RoaringBitmapIDFilter(const roaring::Roaring &bitmap) : bitmap(bitmap) {}
 
-        bool operator()(hnswlib::labeltype label) override {
-            return roaring_bitmap_contains(bitmap_, static_cast<uint32_t>(label));
-        }
+        bool operator()(hnswlib::labeltype label) final { return bitmap.contains(label); }
 
     private:
-        const roaring_bitmap_t *bitmap_;
+        const roaring::Roaring &bitmap;
     };
 
 private:
-    int dim;
-    hnswlib::SpaceInterface<float> *space;
-    hnswlib::HierarchicalNSW<float> *index;
+    std::unique_ptr<hnswlib::SpaceInterface<float> > space;
+    std::unique_ptr<hnswlib::HierarchicalNSW<float> > index;
 };
 
 

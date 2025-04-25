@@ -1,5 +1,6 @@
 #include "ScalarStorage.h"
 
+#include <stdexcept>
 #include <string>
 
 #include "logger.h"
@@ -8,27 +9,36 @@
 
 ScalarStorage::ScalarStorage(const std::string &db_path) {
     rocksdb::Options options;
+    if (auto status = rocksdb::DestroyDB(db_path, options); !status.ok()) {
+        global_logger->error("Error destroying RocksDB: {}", status.ToString());
+        throw std::runtime_error("Error destroying RocksDB: " + status.ToString());
+    }
     options.create_if_missing = true;
-    auto status = rocksdb::DB::Open(options, db_path, &db_);
+    if (auto status = rocksdb::DB::Open(options, db_path, &db); !status.ok()) {
+        global_logger->error("Error opening RocksDB: {}", status.ToString());
+        throw std::runtime_error("Error opening RocksDB: " + status.ToString());
+    }
 }
 
-void ScalarStorage::insert_scalar(uint64_t id, const rapidjson::Document &data) {
+void ScalarStorage::insert_scalar(uint32_t id, const rapidjson::Document &data) {
     rapidjson::StringBuffer buffer;
     rapidjson::Writer writer(buffer);
     data.Accept(writer);
     std::string value = buffer.GetString();
-    auto status = db_->Put(rocksdb::WriteOptions(), std::to_string(id), value);
+    if (auto status = db->Put(rocksdb::WriteOptions(), std::to_string(id), value); !status.ok())
+        global_logger->error("Error inserting scalar: {}", status.ToString());
 }
 
-rapidjson::Document ScalarStorage::get_scalar(uint64_t id) {
+rapidjson::Document ScalarStorage::get_scalar(uint32_t id) {
     std::string value;
-    auto status = db_->Get(rocksdb::ReadOptions(), std::to_string(id), &value);
+    auto status = db->Get(rocksdb::ReadOptions(), std::to_string(id), &value);
     if (!status.ok()) return {};
+
     rapidjson::Document data;
     data.Parse(value.c_str());
     rapidjson::StringBuffer buffer;
     rapidjson::Writer writer(buffer);
     data.Accept(writer);
-    GlobalLogger->debug("Data retrieved: {}, RocksDB status: {}", buffer.GetString(), status.ToString());
+    global_logger->debug("Data retrieved: {}, RocksDB status: {}", buffer.GetString(), status.ToString());
     return data;
 }

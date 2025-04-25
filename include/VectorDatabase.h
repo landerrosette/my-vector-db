@@ -2,7 +2,6 @@
 #define VECTORDATABASE_H
 
 
-#include <cstdint>
 #include <string>
 #include <utility>
 
@@ -12,16 +11,16 @@
 
 class VectorDatabase {
 public:
-    explicit VectorDatabase(const std::string &db_path) : scalar_storage_(db_path) {}
+    explicit VectorDatabase(const std::string &db_path) : scalar_storage(db_path) {}
 
-    void upsert(uint64_t id, const rapidjson::Document &data, IndexFactory::IndexType index_type);
+    void upsert(uint32_t id, const rapidjson::Document &data, IndexFactory::IndexType index_type);
 
-    rapidjson::Document query(uint64_t id) { return scalar_storage_.get_scalar(id); }
+    rapidjson::Document query(uint32_t id) { return scalar_storage.get_scalar(id); }
 
-    std::pair<std::vector<long>, std::vector<float>> search(const rapidjson::Document &json_request);
+    std::pair<std::vector<uint32_t>, std::vector<float> > search(const rapidjson::Document &json_request);
 
 private:
-    ScalarStorage scalar_storage_;
+    ScalarStorage scalar_storage;
 };
 
 
