@@ -90,6 +90,7 @@ void HttpServer::upsertHandler(const httplib::Request &req, httplib::Response &r
 
     uint32_t id = json_request["id"].GetUint();
     auto index_type = get_index_type_from_request(json_request);
+    vector_database.write_wal_log("upsert", json_request);
     vector_database.upsert(id, json_request, index_type);
 
     rapidjson::Document json_response;

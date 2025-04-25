@@ -17,7 +17,8 @@ int main() {
     get_global_index_factory().init(IndexFactory::IndexType::FILTER);
     global_logger->info("Global index factory initialized");
 
-    VectorDatabase vector_database("scalar_storage.db");
+    VectorDatabase vector_database("scalar_storage.db", "wal_log.txt");
+    vector_database.reload_database();
     global_logger->info("Vector database initialized");
 
     HttpServer server("0.0.0.0", 8080, vector_database);

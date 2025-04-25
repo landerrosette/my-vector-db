@@ -107,3 +107,28 @@ std::pair<std::vector<uint32_t>, std::vector<float> > VectorDatabase::search(con
 
     return results;
 }
+
+void VectorDatabase::reload_database() {
+    global_logger->info("Reloading vector database");
+    while (true) {
+        auto [operation_type, json_data] = persistence.read_next_wal_log();
+        if (operation_type.empty()) break;
+
+        global_logger->info("Operation type: {}", operation_type);
+        rapidjson::StringBuffer buffer;
+        rapidjson::Writer writer(buffer);
+        json_data.Accept(writer);
+        global_logger->info("Data: {}", buffer.GetString());
+
+        if (operation_type == "upsert") {
+            uint32_t id = json_data["id"].GetUint();
+            auto index_type = get_index_type_from_request(json_data);
+            upsert(id, json_data, index_type);
+        }
+    }
+}
+
+void VectorDatabase::write_wal_log(const std::string &operation_type, const rapidjson::Document &json_data) {
+    std::string version = "1.0";
+    persistence.write_wal_log(operation_type, json_data, version);
+}
