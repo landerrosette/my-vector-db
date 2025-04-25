@@ -1,5 +1,6 @@
 #include "FaissIndex.h"
 
+#include <utility>
 #include <faiss/IndexIDMap.h>
 
 #include "logger.h"
@@ -30,7 +31,7 @@ std::pair<std::vector<uint32_t>, std::vector<float> > FaissIndex::search_vectors
         ids.push_back(static_cast<uint32_t>(idx));
     }
 
-    return {ids, distances};
+    return {std::move(ids), std::move(distances)};
 }
 
 void FaissIndex::remove_vectors(const std::vector<uint32_t> &ids) {
