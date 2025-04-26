@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.25)
-project(myVectorDB)
+project(my-vector-db)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(myVectorDB
+add_executable(my-vector-db
         src/main.cpp
         src/FaissIndex.cpp
         src/IndexFactory.cpp
@@ -17,7 +17,7 @@ add_executable(myVectorDB
         src/Persistence.cpp
 )
 
-target_include_directories(myVectorDB PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(my-vector-db PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 find_package(OpenMP REQUIRED)
 find_package(faiss REQUIRED)
@@ -27,14 +27,14 @@ find_path(ROCKSDB_INCLUDE_DIR rocksdb/db.h REQUIRED)
 
 find_library(ROCKSDB_LIBRARY rocksdb REQUIRED)
 
-target_include_directories(myVectorDB PRIVATE
+target_include_directories(my-vector-db PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-httplib
         ${CMAKE_CURRENT_SOURCE_DIR}/external/rapidjson/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external/hnswlib
         ${ROCKSDB_INCLUDE_DIR}
 )
 
-target_link_libraries(myVectorDB PRIVATE
+target_link_libraries(my-vector-db PRIVATE
         faiss
         spdlog::spdlog
         ${ROCKSDB_LIBRARY}
