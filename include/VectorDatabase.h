@@ -13,7 +13,7 @@
 class VectorDatabase {
 public:
     VectorDatabase(const std::string &db_path, const std::string &wal_path) : scalar_storage(db_path) {
-        persistence.init(wal_path);
+        persistence.init(wal_path, scalar_storage);
     }
 
     void upsert(uint32_t id, const rapidjson::Document &data, IndexFactory::IndexType index_type);
@@ -25,6 +25,8 @@ public:
     void reload_database();
 
     void write_wal_log(const std::string &operation_type, const rapidjson::Document &json_data);
+
+    void take_snapshot() { persistence.take_snapshot(scalar_storage); }
 
 private:
     ScalarStorage scalar_storage;

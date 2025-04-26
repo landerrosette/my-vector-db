@@ -110,6 +110,7 @@ std::pair<std::vector<uint32_t>, std::vector<float> > VectorDatabase::search(con
 
 void VectorDatabase::reload_database() {
     global_logger->info("Reloading vector database");
+    persistence.load_snapshot(scalar_storage);
     while (true) {
         auto [operation_type, json_data] = persistence.read_next_wal_log();
         if (operation_type.empty()) break;
