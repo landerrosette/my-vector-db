@@ -16,6 +16,10 @@ public:
 
     rapidjson::Document get_scalar(uint32_t id);
 
+    void put(const std::string &key, const std::string &value);
+
+    std::string get(const std::string &key);
+
 private:
     std::unique_ptr<rocksdb::DB> db;
 };

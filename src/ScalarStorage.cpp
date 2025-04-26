@@ -9,10 +9,6 @@
 
 ScalarStorage::ScalarStorage(const std::string &db_path) {
     rocksdb::Options options;
-    if (auto status = rocksdb::DestroyDB(db_path, options); !status.ok()) {
-        global_logger->error("Error destroying RocksDB: {}", status.ToString());
-        throw std::runtime_error("Error destroying RocksDB: " + status.ToString());
-    }
     options.create_if_missing = true;
     if (auto status = rocksdb::DB::Open(options, db_path, &db); !status.ok()) {
         global_logger->error("Error opening RocksDB: {}", status.ToString());
@@ -41,4 +37,16 @@ rapidjson::Document ScalarStorage::get_scalar(uint32_t id) {
     data.Accept(writer);
     global_logger->debug("Data retrieved: {}, RocksDB status: {}", buffer.GetString(), status.ToString());
     return data;
+}
+
+void ScalarStorage::put(const std::string &key, const std::string &value) {
+    if (auto status = db->Put(rocksdb::WriteOptions(), key, value); !status.ok())
+        global_logger->error("Error putting key-value pair: {}", status.ToString());
+}
+
+std::string ScalarStorage::get(const std::string &key) {
+    std::string value;
+    if (auto status = db->Get(rocksdb::ReadOptions(), key, &value); !status.ok())
+        global_logger->error("Error getting value for key {}: {}", key, status.ToString());
+    return value;
 }
