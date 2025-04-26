@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -22,6 +23,7 @@ public:
         const std::vector<float> &query, int k,
         std::optional<std::reference_wrapper<const roaring::Roaring> > bitmap = std::nullopt, int ef_search = 50);
 
+private:
     class RoaringBitmapIDFilter : public hnswlib::BaseFilterFunctor {
     public:
         explicit RoaringBitmapIDFilter(const roaring::Roaring &bitmap) : bitmap(bitmap) {}
@@ -32,7 +34,6 @@ public:
         const roaring::Roaring &bitmap;
     };
 
-private:
     std::unique_ptr<hnswlib::SpaceInterface<float> > space;
     std::unique_ptr<hnswlib::HierarchicalNSW<float> > index;
 };
