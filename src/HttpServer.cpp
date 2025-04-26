@@ -14,20 +14,20 @@
 HttpServer::HttpServer(std::string host, int port, VectorDatabase &vector_database) : host(std::move(host)), port(port),
     vector_database(vector_database) {
     server.Post("/search", [this](const httplib::Request &req, httplib::Response &res) {
-        searchHandler(req, res);
+        search_handler(req, res);
     });
     server.Post("/insert", [this](const httplib::Request &req, httplib::Response &res) {
-        insertHandler(req, res);
+        insert_handler(req, res);
     });
     server.Post("/upsert", [this](const httplib::Request &req, httplib::Response &res) {
-        upsertHandler(req, res);
+        upsert_handler(req, res);
     });
     server.Post("/query", [this](const httplib::Request &req, httplib::Response &res) {
-        queryHandler(req, res);
+        query_handler(req, res);
     });
 }
 
-void HttpServer::searchHandler(const httplib::Request &req, httplib::Response &res) {
+void HttpServer::search_handler(const httplib::Request &req, httplib::Response &res) {
     rapidjson::Document json_request;
     json_request.Parse(req.body.c_str());
 
@@ -46,10 +46,10 @@ void HttpServer::searchHandler(const httplib::Request &req, httplib::Response &r
     json_response.AddMember("vectors", vectors, allocator);
     json_response.AddMember("distances", distances, allocator);
     json_response.AddMember("retCode", 0, allocator);
-    setJsonResponse(json_response, res);
+    set_json_response(json_response, res);
 }
 
-void HttpServer::insertHandler(const httplib::Request &req, httplib::Response &res) {
+void HttpServer::insert_handler(const httplib::Request &req, httplib::Response &res) {
     rapidjson::Document json_request;
     json_request.Parse(req.body.c_str());
 
@@ -79,10 +79,10 @@ void HttpServer::insertHandler(const httplib::Request &req, httplib::Response &r
     json_response.SetObject();
     auto &allocator = json_response.GetAllocator();
     json_response.AddMember("retCode", 0, allocator);
-    setJsonResponse(json_response, res);
+    set_json_response(json_response, res);
 }
 
-void HttpServer::upsertHandler(const httplib::Request &req, httplib::Response &res) {
+void HttpServer::upsert_handler(const httplib::Request &req, httplib::Response &res) {
     rapidjson::Document json_request;
     json_request.Parse(req.body.c_str());
 
@@ -97,10 +97,10 @@ void HttpServer::upsertHandler(const httplib::Request &req, httplib::Response &r
     json_response.SetObject();
     auto &allocator = json_response.GetAllocator();
     json_response.AddMember("retCode", 0, allocator);
-    setJsonResponse(json_response, res);
+    set_json_response(json_response, res);
 }
 
-void HttpServer::queryHandler(const httplib::Request &req, httplib::Response &res) {
+void HttpServer::query_handler(const httplib::Request &req, httplib::Response &res) {
     rapidjson::Document json_request;
     json_request.Parse(req.body.c_str());
 
@@ -115,10 +115,10 @@ void HttpServer::queryHandler(const httplib::Request &req, httplib::Response &re
     for (auto &member: json_data.GetObject())
         json_response.AddMember(member.name, member.value, allocator);
     json_response.AddMember("retCode", 0, allocator);
-    setJsonResponse(json_response, res);
+    set_json_response(json_response, res);
 }
 
-void HttpServer::setJsonResponse(const rapidjson::Document &json_response, httplib::Response &res) {
+void HttpServer::set_json_response(const rapidjson::Document &json_response, httplib::Response &res) {
     rapidjson::StringBuffer buffer;
     rapidjson::Writer writer(buffer);
     json_response.Accept(writer);

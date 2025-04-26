@@ -20,15 +20,15 @@ private:
     int port;
     VectorDatabase &vector_database;
 
-    void searchHandler(const httplib::Request &req, httplib::Response &res);
+    void search_handler(const httplib::Request &req, httplib::Response &res);
 
-    void insertHandler(const httplib::Request &req, httplib::Response &res);
+    void insert_handler(const httplib::Request &req, httplib::Response &res);
 
-    void upsertHandler(const httplib::Request &req, httplib::Response &res);
+    void upsert_handler(const httplib::Request &req, httplib::Response &res);
 
-    void queryHandler(const httplib::Request &req, httplib::Response &res);
+    void query_handler(const httplib::Request &req, httplib::Response &res);
 
-    void setJsonResponse(const rapidjson::Document &json_response, httplib::Response &res);
+    void set_json_response(const rapidjson::Document &json_response, httplib::Response &res);
 };
 
 
