@@ -1,5 +1,9 @@
 #include "FilterIndex.h"
 
+#include <cstddef>
+#include <sstream>
+#include <vector>
+
 #include "logger.h"
 
 void FilterIndex::add_int_field_filter(const std::string &field_name, int value, uint32_t id) {
@@ -49,4 +53,39 @@ roaring::Roaring FilterIndex::get_int_field_filter_bitmap(const std::string &fie
         }
     }
     return result_bitmap;
+}
+
+std::string FilterIndex::serialize_int_field_filter() {
+    std::ostringstream oss;
+    for (const auto &[field_name, value_map]: int_field_filter) {
+        for (const auto &[value, bitmap]: value_map) {
+            uint32_t size = bitmap.getSizeInBytes();
+            std::vector<std::byte> serialized_bitmap(size);
+            bitmap.write(reinterpret_cast<char *>(serialized_bitmap.data()));
+            oss << field_name << "|" << value << "|";
+            oss.write(reinterpret_cast<char *>(serialized_bitmap.data()), size);
+            oss << "\n";
+        }
+    }
+    return oss.str();
+}
+
+void FilterIndex::deserialize_int_field_filter(const std::string &serialized_data) {
+    std::istringstream iss(serialized_data);
+    for (std::string line; std::getline(iss, line);) {
+        std::istringstream iss_line(line);
+        std::string field_name, value_str;
+        std::getline(iss_line, field_name, '|');
+        std::getline(iss_line, value_str, '|');
+        int value = std::stoi(value_str);
+        std::vector<std::byte> serialized_bitmap;
+        while (iss_line) {
+            std::byte byte;
+            iss_line.read(reinterpret_cast<char *>(&byte), sizeof(std::byte));
+            serialized_bitmap.push_back(byte);
+        }
+        roaring::Roaring bitmap = roaring::Roaring::readSafe(reinterpret_cast<char *>(serialized_bitmap.data()),
+                                                             serialized_bitmap.size());
+        int_field_filter[field_name][value] = bitmap;
+    }
 }
