@@ -1,6 +1,9 @@
 #include "HNSWLibIndex.h"
 
+#include <stdexcept>
 #include <utility>
+
+#include "logger.h"
 
 HNSWLibIndex::HNSWLibIndex(int dim, int num_data, IndexFactory::MetricType metric, int M, int ef_construction) {
     if (metric == IndexFactory::MetricType::L2)
@@ -28,4 +31,12 @@ std::pair<std::vector<uint32_t>, std::vector<float> > HNSWLibIndex::search_vecto
     }
 
     return {std::move(ids), std::move(distances)};
+}
+
+void HNSWLibIndex::load_index(const std::string &file_path) {
+    try {
+        index->loadIndex(file_path, space.get(), index->getMaxElements());
+    } catch (const std::runtime_error &e) {
+        global_logger->warn("Failed to open index file: {}, skipping load", e.what());
+    }
 }

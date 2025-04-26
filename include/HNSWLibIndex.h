@@ -23,6 +23,10 @@ public:
         const std::vector<float> &query, int k,
         std::optional<std::reference_wrapper<const roaring::Roaring> > bitmap = std::nullopt, int ef_search = 50);
 
+    void save_index(const std::string &file_path) { index->saveIndex(file_path); }
+
+    void load_index(const std::string &file_path);
+
 private:
     class RoaringBitmapIDFilter : public hnswlib::BaseFilterFunctor {
     public:

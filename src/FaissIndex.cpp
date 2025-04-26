@@ -2,6 +2,7 @@
 
 #include <utility>
 #include <faiss/IndexIDMap.h>
+#include <faiss/impl/FaissException.h>
 
 #include "logger.h"
 
@@ -38,4 +39,12 @@ void FaissIndex::remove_vectors(const std::vector<uint32_t> &ids) {
     std::vector<faiss::idx_t> indices(ids.begin(), ids.end());
     faiss::IDSelectorBatch selector(ids.size(), indices.data());
     index->remove_ids(selector);
+}
+
+void FaissIndex::load_index(const std::string &file_path) {
+    try {
+        index.reset(faiss::read_index(file_path.c_str()));
+    } catch (const faiss::FaissException &e) {
+        global_logger->warn("Failed to open index file: {}, skipping load", e.what());
+    }
 }
