@@ -4,7 +4,10 @@
 
 #include <map>
 #include <memory>
+#include <string>
 #include <variant>
+
+#include "ScalarStorage.h"
 
 class FaissIndex;
 class HNSWLibIndex;
@@ -34,6 +37,10 @@ public:
 
     template<typename T>
     T *get_index(IndexType type) const;
+
+    void save_index(const std::string &prefix, ScalarStorage &scalar_storage);
+
+    void load_index(const std::string &prefix, ScalarStorage &scalar_storage);
 
 private:
     std::map<IndexType, IndexVariant> index_map;
