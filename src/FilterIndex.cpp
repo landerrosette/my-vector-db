@@ -103,7 +103,7 @@ void FilterIndex::load_index(const std::filesystem::path &file_path) {
         if (!ifs.is_open())
             throw std::runtime_error("Error opening " + file_path.string() + ": " + std::strerror(errno));
         deserialize_int_field_filter(ifs);
-        if (!ifs)
+        if (!ifs && !ifs.eof())
             throw std::runtime_error("Error loading index from file: " + std::string(std::strerror(errno)));
     } else
         get_global_logger()->info("File {} does not exist, skipping load", file_path.string());
