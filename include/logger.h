@@ -6,11 +6,13 @@
 
 #include "spdlog/spdlog.h"
 
-extern std::shared_ptr<spdlog::logger> global_logger;
+constexpr const char *GLOBAL_LOGGER_NAME = "my_vector_db";
 
 void init_global_logger();
 
-void set_log_level(spdlog::level::level_enum level);
+void set_global_log_level(spdlog::level::level_enum level);
+
+std::shared_ptr<spdlog::logger> get_global_logger();
 
 
 #endif //LOGGER_H
