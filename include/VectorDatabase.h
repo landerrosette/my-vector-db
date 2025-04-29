@@ -2,6 +2,8 @@
 #define VECTORDATABASE_H
 
 
+#include <filesystem>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -12,23 +14,28 @@
 
 class VectorDatabase {
 public:
-    VectorDatabase(const std::string &db_path, const std::string &wal_path) : scalar_storage(db_path) {
-        persistence.init(wal_path, scalar_storage);
-    }
+    VectorDatabase(std::unique_ptr<IndexFactory> index_factory, const std::filesystem::path &db_path,
+                   const std::filesystem::path &wal_path) : index_factory(std::move(index_factory)),
+                                                            scalar_storage(db_path),
+                                                            persistence(wal_path, *index_factory.get(),
+                                                                        scalar_storage) {}
 
     void upsert(uint32_t id, const rapidjson::Document &data, IndexFactory::IndexType index_type);
 
-    rapidjson::Document query(uint32_t id) { return scalar_storage.get_scalar(id); }
+    rapidjson::Document query(uint32_t id) const { return scalar_storage.get_scalar(id); }
 
-    std::pair<std::vector<uint32_t>, std::vector<float> > search(const rapidjson::Document &json_request);
+    std::pair<std::vector<uint32_t>, std::vector<float> > search(const rapidjson::Document &json_request) const;
 
     void reload_database();
 
-    void write_wal_log(const std::string &operation_type, const rapidjson::Document &json_data);
+    void write_wal_log(const std::string &operation_type, const rapidjson::Document &json_data) {
+        persistence.write_wal_log(operation_type, json_data);
+    }
 
-    void take_snapshot() { persistence.take_snapshot(scalar_storage); }
+    void take_snapshot() { persistence.take_snapshot(); }
 
 private:
+    std::unique_ptr<IndexFactory> index_factory;
     ScalarStorage scalar_storage;
     Persistence persistence;
 };

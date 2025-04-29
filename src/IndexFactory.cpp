@@ -7,7 +7,7 @@
 #include "FilterIndex.h"
 #include "HNSWLibIndex.h"
 
-void IndexFactory::init(IndexType type, int dim, int num_data, MetricType metric) {
+void IndexFactory::make_index(IndexType type, int dim, int num_data, MetricType metric) {
     switch (type) {
         case IndexType::FLAT: {
             faiss::MetricType faiss_metric = metric == MetricType::L2 ? faiss::METRIC_L2 : faiss::METRIC_INNER_PRODUCT;
@@ -26,45 +26,18 @@ void IndexFactory::init(IndexType type, int dim, int num_data, MetricType metric
     }
 }
 
-void IndexFactory::save_index(const std::string &prefix, ScalarStorage &scalar_storage) {
-    for (const auto &[type, index]: index_map) {
-        std::string file_path = prefix + std::to_string(static_cast<int>(type)) + ".index";
-        switch (type) {
-            case IndexType::FLAT:
-                std::get<std::unique_ptr<FaissIndex> >(index)->save_index(file_path);
-                break;
-            case IndexType::HNSW:
-                std::get<std::unique_ptr<HNSWLibIndex> >(index)->save_index(file_path);
-                break;
-            case IndexType::FILTER:
-                std::get<std::unique_ptr<FilterIndex> >(index)->save_index(scalar_storage, file_path);
-                break;
-            default:
-                break;
-        }
-    }
+IndexBase *IndexFactory::get_index(IndexType type) const {
+    if (auto it = index_map.find(type); it != index_map.end())
+        return it->second.get();
+    return nullptr;
 }
 
-void IndexFactory::load_index(const std::string &prefix, ScalarStorage &scalar_storage) {
-    for (const auto &[type, index]: index_map) {
-        std::string file_path = prefix + std::to_string(static_cast<int>(type)) + ".index";
-        switch (type) {
-            case IndexType::FLAT:
-                std::get<std::unique_ptr<FaissIndex> >(index)->load_index(file_path);
-                break;
-            case IndexType::HNSW:
-                std::get<std::unique_ptr<HNSWLibIndex> >(index)->load_index(file_path);
-                break;
-            case IndexType::FILTER:
-                std::get<std::unique_ptr<FilterIndex> >(index)->load_index(scalar_storage, file_path);
-                break;
-            default:
-                break;
-        }
-    }
+void IndexFactory::save_index(const std::string &prefix) const {
+    for (const auto &[type, index]: index_map)
+        index->save_index(prefix + std::to_string(static_cast<int>(type)) + ".index");
 }
 
-IndexFactory &get_global_index_factory() {
-    static IndexFactory global_index_factory;
-    return global_index_factory;
+void IndexFactory::load_index(const std::string &prefix) {
+    for (const auto &[type, index]: index_map)
+        index->load_index(prefix + std::to_string(static_cast<int>(type)) + ".index");
 }

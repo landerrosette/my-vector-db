@@ -2,16 +2,11 @@
 #define INDEXFACTORY_H
 
 
-#include <map>
 #include <memory>
 #include <string>
-#include <variant>
+#include <unordered_map>
 
-#include "ScalarStorage.h"
-
-class FaissIndex;
-class HNSWLibIndex;
-class FilterIndex;
+#include "IndexBase.h"
 
 class IndexFactory {
 public:
@@ -27,33 +22,17 @@ public:
         IP
     };
 
-    using IndexVariant = std::variant<
-        std::unique_ptr<FaissIndex>,
-        std::unique_ptr<HNSWLibIndex>,
-        std::unique_ptr<FilterIndex>
-    >;
+    void make_index(IndexType type, int dim = 1, int num_data = 0, MetricType metric = MetricType::L2);
 
-    void init(IndexType type, int dim = 1, int num_data = 0, MetricType metric = MetricType::L2);
+    IndexBase *get_index(IndexType type) const;
 
-    template<typename T>
-    T *get_index(IndexType type) const;
+    void save_index(const std::string &prefix) const;
 
-    void save_index(const std::string &prefix, ScalarStorage &scalar_storage);
-
-    void load_index(const std::string &prefix, ScalarStorage &scalar_storage);
+    void load_index(const std::string &prefix);
 
 private:
-    std::map<IndexType, IndexVariant> index_map;
+    std::unordered_map<IndexType, std::unique_ptr<IndexBase> > index_map;
 };
-
-template<typename T>
-T *IndexFactory::get_index(IndexType type) const {
-    if (auto it = index_map.find(type); it != index_map.end())
-        return std::get_if<std::unique_ptr<T> >(&it->second)->get();
-    return nullptr;
-}
-
-IndexFactory &get_global_index_factory();
 
 
 #endif //INDEXFACTORY_H
