@@ -36,5 +36,5 @@ void HNSWLibIndex::load_index(const std::filesystem::path &file_path) {
     if (std::filesystem::exists(file_path))
         index->loadIndex(file_path, space.get(), index->getMaxElements());
     else
-        get_global_logger()->info("File {} does not exist, skipping load", file_path);
+        get_global_logger()->info("File {} does not exist, skipping load", file_path.string());
 }

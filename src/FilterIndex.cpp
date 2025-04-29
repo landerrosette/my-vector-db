@@ -82,7 +82,7 @@ void FilterIndex::deserialize_int_field_filter(std::istream &is) {
         std::getline(iss_line, field_name, '|');
         std::getline(iss_line, value_str, '|');
         int value = std::stoi(value_str);
-        std::vector<char> serialized_bitmap(std::istreambuf_iterator(iss_line), {});
+        std::vector<char> serialized_bitmap(std::istreambuf_iterator<char>(iss_line), {});
         roaring::Roaring bitmap = roaring::Roaring::readSafe(serialized_bitmap.data(), serialized_bitmap.size());
         int_field_filter[field_name][value] = bitmap;
     }
@@ -106,5 +106,5 @@ void FilterIndex::load_index(const std::filesystem::path &file_path) {
         if (!ifs)
             throw std::runtime_error("Error loading index from file: " + std::string(std::strerror(errno)));
     } else
-        get_global_logger()->info("File {} does not exist, skipping load", file_path);
+        get_global_logger()->info("File {} does not exist, skipping load", file_path.string());
 }
