@@ -17,7 +17,7 @@ public:
     VectorDatabase(std::unique_ptr<IndexFactory> index_factory, const std::filesystem::path &db_path,
                    const std::filesystem::path &wal_path) : index_factory(std::move(index_factory)),
                                                             scalar_storage(db_path),
-                                                            persistence(wal_path, *index_factory.get(),
+                                                            persistence(wal_path, *this->index_factory.get(),
                                                                         scalar_storage) {}
 
     void upsert(uint32_t id, const rapidjson::Document &data, IndexFactory::IndexType index_type);
