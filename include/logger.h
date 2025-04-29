@@ -6,7 +6,7 @@
 
 #include "spdlog/spdlog.h"
 
-constexpr const char *GLOBAL_LOGGER_NAME = "my_vector_db";
+constexpr const char *GLOBAL_LOGGER_NAME = "vector-db";
 
 void init_global_logger();
 
