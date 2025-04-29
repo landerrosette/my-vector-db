@@ -70,6 +70,8 @@ std::pair<std::vector<uint32_t>, std::vector<float> > VectorDatabase::search(con
         filter_bitmap = filter_index->get_int_field_filter_bitmap(field_name, op, value);
     }
 
+    auto index_type = get_index_type_from_request(json_request);
+    auto *index = dynamic_cast<VectorIndex *>(index_factory->get_index(index_type));
     return index->search_vectors(query, k, filter_bitmap);
 }
 
