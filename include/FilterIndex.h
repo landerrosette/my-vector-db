@@ -2,14 +2,15 @@
 #define FILTERINDEX_H
 
 
-#include <map>
+#include <iostream>
 #include <optional>
 #include <string>
+#include <unordered_map>
 
-#include "ScalarStorage.h"
+#include "IndexBase.h"
 #include "roaring/roaring.hh"
 
-class FilterIndex {
+class FilterIndex : public IndexBase {
 public:
     enum class Operation {
         EQUAL,
@@ -23,18 +24,18 @@ public:
     void update_int_field_filter(const std::string &field_name, std::optional<int> old_value, int new_value,
                                  uint32_t id);
 
-    roaring::Roaring get_int_field_filter_bitmap(const std::string &field_name, Operation op, int value);
+    roaring::Roaring get_int_field_filter_bitmap(const std::string &field_name, Operation op, int value) const;
 
-    std::string serialize_int_field_filter();
+    void serialize_int_field_filter(std::ostream &os) const;
 
-    void deserialize_int_field_filter(const std::string &serialized_data);
+    void deserialize_int_field_filter(std::istream &is);
 
-    void save_index(ScalarStorage &scalar_storage, const std::string &key) { scalar_storage.put(key, serialize_int_field_filter()); }
+    void save_index(const std::filesystem::path &file_path) const override;
 
-    void load_index(ScalarStorage &scalar_storage, const std::string &key) { deserialize_int_field_filter(scalar_storage.get(key)); }
+    void load_index(const std::filesystem::path &file_path) override;
 
 private:
-    std::map<std::string, std::map<int, roaring::Roaring> > int_field_filter;
+    std::unordered_map<std::string, std::unordered_map<int, roaring::Roaring> > int_field_filter;
 };
 
 

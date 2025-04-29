@@ -2,30 +2,27 @@
 #define HNSWLIBINDEX_H
 
 
-#include <functional>
 #include <memory>
-#include <optional>
-#include <string>
-#include <utility>
-#include <vector>
 
 #include "IndexFactory.h"
+#include "VectorIndex.h"
 #include "hnswlib/hnswlib.h"
-#include "roaring/roaring.hh"
 
-class HNSWLibIndex {
+class HNSWLibIndex : public VectorIndex {
 public:
     HNSWLibIndex(int dim, int num_data, IndexFactory::MetricType metric, int M = 16, int ef_construction = 200);
 
-    void insert_vectors(const std::vector<float> &data, uint32_t id) { index->addPoint(data.data(), id); }
+    void insert_vectors(const std::vector<float> &data, uint32_t id) override { index->addPoint(data.data(), id); }
 
     std::pair<std::vector<uint32_t>, std::vector<float> > search_vectors(
         const std::vector<float> &query, int k,
-        std::optional<std::reference_wrapper<const roaring::Roaring> > bitmap = std::nullopt, int ef_search = 50);
+        std::optional<std::reference_wrapper<const roaring::Roaring> > bitmap = std::nullopt) const override;
 
-    void save_index(const std::string &file_path) { index->saveIndex(file_path); }
+    void remove_vectors(const std::vector<uint32_t> &ids) override { for (const auto &id: ids) index->markDelete(id); }
 
-    void load_index(const std::string &file_path);
+    void save_index(const std::filesystem::path &file_path) const override { index->saveIndex(file_path); }
+
+    void load_index(const std::filesystem::path &file_path) override;
 
 private:
     class RoaringBitmapIDFilter : public hnswlib::BaseFilterFunctor {

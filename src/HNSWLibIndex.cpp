@@ -1,6 +1,5 @@
 #include "HNSWLibIndex.h"
 
-#include <stdexcept>
 #include <utility>
 
 #include "logger.h"
@@ -14,9 +13,9 @@ HNSWLibIndex::HNSWLibIndex(int dim, int num_data, IndexFactory::MetricType metri
 }
 
 std::pair<std::vector<uint32_t>, std::vector<float> > HNSWLibIndex::search_vectors(
-    const std::vector<float> &query, int k, std::optional<std::reference_wrapper<const roaring::Roaring> > bitmap,
-    int ef_search) {
-    index->setEf(ef_search);
+    const std::vector<float> &query, int k,
+    std::optional<std::reference_wrapper<const roaring::Roaring> > bitmap) const {
+    index->setEf(50);
 
     std::optional<RoaringBitmapIDFilter> selector;
     if (bitmap) selector.emplace(*bitmap);
@@ -33,10 +32,9 @@ std::pair<std::vector<uint32_t>, std::vector<float> > HNSWLibIndex::search_vecto
     return {std::move(ids), std::move(distances)};
 }
 
-void HNSWLibIndex::load_index(const std::string &file_path) {
-    try {
+void HNSWLibIndex::load_index(const std::filesystem::path &file_path) {
+    if (std::filesystem::exists(file_path))
         index->loadIndex(file_path, space.get(), index->getMaxElements());
-    } catch (const std::runtime_error &e) {
-        global_logger->warn("Failed to open index file: {}, skipping load", e.what());
-    }
+    else
+        get_global_logger()->info("File {} does not exist, skipping load", file_path);
 }

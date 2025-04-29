@@ -2,7 +2,6 @@
 
 #include <utility>
 #include <faiss/IndexIDMap.h>
-#include <faiss/impl/FaissException.h>
 
 #include "logger.h"
 
@@ -12,7 +11,8 @@ void FaissIndex::insert_vectors(const std::vector<float> &data, uint32_t id) {
 }
 
 std::pair<std::vector<uint32_t>, std::vector<float> > FaissIndex::search_vectors(
-    const std::vector<float> &query, int k, std::optional<std::reference_wrapper<const roaring::Roaring> > bitmap) {
+    const std::vector<float> &query, int k,
+    std::optional<std::reference_wrapper<const roaring::Roaring> > bitmap) const {
     int dim = index->d;
     int num_queries = query.size() / dim;
     std::vector<faiss::idx_t> indices(num_queries * k);
@@ -41,10 +41,9 @@ void FaissIndex::remove_vectors(const std::vector<uint32_t> &ids) {
     index->remove_ids(selector);
 }
 
-void FaissIndex::load_index(const std::string &file_path) {
-    try {
+void FaissIndex::load_index(const std::filesystem::path &file_path) {
+    if (std::filesystem::exists(file_path))
         index.reset(faiss::read_index(file_path.c_str()));
-    } catch (const faiss::FaissException &e) {
-        global_logger->warn("Failed to open index file: {}, skipping load", e.what());
-    }
+    else
+        get_global_logger()->info("File {} does not exist, skipping load", file_path);
 }
