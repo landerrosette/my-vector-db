@@ -6,7 +6,6 @@
 
 #include "httplib.h"
 #include "VectorDatabase.h"
-#include "rapidjson/document.h"
 
 class HttpServer {
 public:
@@ -22,13 +21,11 @@ private:
 
     void search_handler(const httplib::Request &req, httplib::Response &res);
 
-    void insert_handler(const httplib::Request &req, httplib::Response &res);
-
     void upsert_handler(const httplib::Request &req, httplib::Response &res);
 
     void query_handler(const httplib::Request &req, httplib::Response &res);
 
-    void set_json_response(const rapidjson::Document &json_response, httplib::Response &res);
+    void snapshot_handler(const httplib::Request &req, httplib::Response &res);
 };
 
 
