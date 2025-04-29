@@ -2,9 +2,9 @@
 #define INDEXFACTORY_H
 
 
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 
 #include "IndexBase.h"
 
@@ -31,7 +31,7 @@ public:
     void load_index(const std::string &prefix);
 
 private:
-    std::unordered_map<IndexType, std::unique_ptr<IndexBase> > index_map;
+    std::map<IndexType, std::unique_ptr<IndexBase> > index_map;
 };
 
 
