@@ -1,5 +1,7 @@
 #include "Persistence.h"
 
+#include <cerrno>
+#include <cstring>
 #include <sstream>
 #include <stdexcept>
 
@@ -8,37 +10,35 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 
-void Persistence::init(const std::string &local_path, ScalarStorage &scalar_storage) {
-    wal_log_file.open(local_path, std::ios::in | std::ios::out | std::ios::app);
-    if (!wal_log_file.is_open()) {
-        global_logger->error("Error opening WAL log file: {}", std::strerror(errno));
-        throw std::runtime_error("Error opening WAL log file: " + std::string(std::strerror(errno)));
-    }
-    load_last_snapshot_id(scalar_storage);
+Persistence::Persistence(const std::filesystem::path &wal_file_path, IndexFactory &index_factory,
+                         ScalarStorage &scalar_storage) : wal_stream(wal_file_path,
+                                                                     std::ios::in | std::ios::out | std::ios::app),
+                                                          index_factory(index_factory), scalar_storage(scalar_storage) {
+    if (!wal_stream.is_open())
+        throw std::runtime_error("Error opening " + wal_file_path.string() + ": " + std::strerror(errno));
+    load_last_snapshot_id();
 }
 
-void Persistence::write_wal_log(const std::string &operation_type, const rapidjson::Document &json_data,
-                                const std::string &version) {
+void Persistence::write_wal_log(const std::string &operation_type, const rapidjson::Document &json_data) {
     auto log_id = increase_id();
     rapidjson::StringBuffer buffer;
     rapidjson::Writer writer(buffer);
     json_data.Accept(writer);
-    wal_log_file << log_id << "|" << version << "|" << operation_type << "|" << buffer.GetString() << "\n";
-    if (wal_log_file.fail()) {
-        global_logger->error("Error writing to WAL log file: {}", std::strerror(errno));
-    } else {
-        global_logger->debug("WAL log entry written: {}|{}|{}|{}", log_id, version, operation_type, buffer.GetString());
-        wal_log_file.flush();
-    }
+    wal_stream << log_id << "|" << operation_type << "|" << buffer.GetString() << "\n";
+    if (!wal_stream)
+        throw std::runtime_error("Error writing to WAL log file: " + std::string(std::strerror(errno)));
+    get_global_logger()->debug("WAL log entry written: {}|{}|{}", log_id, operation_type, buffer.GetString());
+    wal_stream.flush();
+    if (!wal_stream)
+        throw std::runtime_error("Error flushing WAL log file: " + std::string(std::strerror(errno)));
 }
 
 std::pair<std::string, rapidjson::Document> Persistence::read_next_wal_log() {
-    global_logger->debug("Reading next WAL log entry");
-    for (std::string line; std::getline(wal_log_file, line);) {
+    get_global_logger()->debug("Reading next WAL log entry");
+    for (std::string line; std::getline(wal_stream, line);) {
         std::istringstream iss(line);
-        std::string log_id_str, version, operation_type, json_data_str;
+        std::string log_id_str, operation_type, json_data_str;
         std::getline(iss, log_id_str, '|');
-        std::getline(iss, version, '|');
         std::getline(iss, operation_type, '|');
         std::getline(iss, json_data_str);
 
@@ -51,37 +51,37 @@ std::pair<std::string, rapidjson::Document> Persistence::read_next_wal_log() {
             rapidjson::StringBuffer buffer;
             rapidjson::Writer writer(buffer);
             json_data.Accept(writer);
-            global_logger->debug("Read WAL log entry: {}|{}|{}|{}", log_id_str, version, operation_type,
-                                 buffer.GetString());
+            get_global_logger()->debug("Read WAL log entry: {}|{}|{}", log_id_str, operation_type, buffer.GetString());
             return {std::move(operation_type), std::move(json_data)};
         } else
-            global_logger->debug("Skipped WAL log entry: {}|{}|{}|{}", log_id_str, version, operation_type,
-                                 json_data_str);
+            get_global_logger()->debug("Skipped WAL log entry: {}|{}|{}", log_id_str, operation_type, json_data_str);
     }
-    wal_log_file.clear();
-    global_logger->debug("No more WAL log entries to read");
+    wal_stream.clear();
+    get_global_logger()->debug("No more WAL log entries to read");
     return {};
 }
 
-void Persistence::save_last_snapshot_id(ScalarStorage &scalar_storage) {
-    scalar_storage.put("snapshots_max_log_id", std::to_string(last_snapshot_id));
-    global_logger->debug("Saved last snapshot ID: {}", last_snapshot_id);
-}
-
-void Persistence::load_last_snapshot_id(ScalarStorage &scalar_storage) {
-    std::string last_snapshot_id_str = scalar_storage.get("snapshots_max_log_id");
-    last_snapshot_id = std::stoul(last_snapshot_id_str);
-    global_logger->debug("Loaded last snapshot ID: {}", last_snapshot_id);
-}
-
-void Persistence::take_snapshot(ScalarStorage &scalar_storage) {
-    global_logger->debug("Taking snapshot");
+void Persistence::take_snapshot() {
+    get_global_logger()->debug("Taking snapshot");
     last_snapshot_id = id;
-    get_global_index_factory().save_index("snapshots_", scalar_storage);
-    save_last_snapshot_id(scalar_storage);
+    index_factory.save_index("snapshots_");
+    save_last_snapshot_id();
 }
 
-void Persistence::load_snapshot(ScalarStorage &scalar_storage) {
-    global_logger->debug("Loading snapshot");
-    get_global_index_factory().load_index("snapshots_", scalar_storage);
+void Persistence::load_snapshot() {
+    get_global_logger()->debug("Loading snapshot");
+    index_factory.load_index("snapshots_");
+}
+
+void Persistence::save_last_snapshot_id() {
+    scalar_storage.put("snapshots_max_log_id", std::to_string(last_snapshot_id));
+    get_global_logger()->debug("Saved last snapshot ID: {}", last_snapshot_id);
+}
+
+void Persistence::load_last_snapshot_id() {
+    std::string last_snapshot_id_str = scalar_storage.get("snapshots_max_log_id");
+    if (!last_snapshot_id_str.empty()) {
+        last_snapshot_id = std::stoul(last_snapshot_id_str);
+        get_global_logger()->debug("Loaded last snapshot ID: {}", last_snapshot_id);
+    }
 }
