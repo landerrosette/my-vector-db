@@ -2,9 +2,9 @@
 #define INDEXFACTORY_H
 
 
+#include <filesystem>
 #include <map>
 #include <memory>
-#include <string>
 
 #include "IndexBase.h"
 
@@ -26,9 +26,9 @@ public:
 
     IndexBase *get_index(IndexType type) const;
 
-    void save_index(const std::string &prefix) const;
+    void save_index(const std::filesystem::path &directory_path) const;
 
-    void load_index(const std::string &prefix);
+    void load_index(const std::filesystem::path &directory_path);
 
 private:
     std::map<IndexType, std::unique_ptr<IndexBase> > index_map;

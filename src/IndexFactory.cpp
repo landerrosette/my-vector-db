@@ -32,12 +32,17 @@ IndexBase *IndexFactory::get_index(IndexType type) const {
     return nullptr;
 }
 
-void IndexFactory::save_index(const std::string &prefix) const {
-    for (const auto &[type, index]: index_map)
-        index->save_index(prefix + std::to_string(static_cast<int>(type)) + ".index");
+void IndexFactory::save_index(const std::filesystem::path &directory_path) const {
+    std::filesystem::create_directories(directory_path);
+    for (const auto &[type, index]: index_map) {
+        std::string file_name = std::to_string(static_cast<int>(type)) + ".index";
+        index->save_index(directory_path / file_name);
+    }
 }
 
-void IndexFactory::load_index(const std::string &prefix) {
-    for (const auto &[type, index]: index_map)
-        index->load_index(prefix + std::to_string(static_cast<int>(type)) + ".index");
+void IndexFactory::load_index(const std::filesystem::path &directory_path) {
+    for (const auto &[type, index]: index_map) {
+        std::string file_name = std::to_string(static_cast<int>(type)) + ".index";
+        index->load_index(directory_path / file_name);
+    }
 }
