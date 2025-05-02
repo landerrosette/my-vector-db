@@ -90,9 +90,8 @@ void FilterIndex::deserialize_int_field_filter(std::istream &is) {
 
 void FilterIndex::save_index(const std::filesystem::path &file_path) const {
     std::ofstream ofs(file_path, std::ios::binary);
-    if (!ofs.is_open())
-        throw std::runtime_error("Error opening " + file_path.string() + ": " + std::strerror(errno));
     serialize_int_field_filter(ofs);
+    ofs.close();
     if (!ofs)
         throw std::runtime_error("Error saving index to file: " + std::string(std::strerror(errno)));
 }
@@ -100,8 +99,6 @@ void FilterIndex::save_index(const std::filesystem::path &file_path) const {
 void FilterIndex::load_index(const std::filesystem::path &file_path) {
     if (std::filesystem::exists(file_path)) {
         std::ifstream ifs(file_path, std::ios::binary);
-        if (!ifs.is_open())
-            throw std::runtime_error("Error opening " + file_path.string() + ": " + std::strerror(errno));
         deserialize_int_field_filter(ifs);
         if (!ifs && !ifs.eof())
             throw std::runtime_error("Error loading index from file: " + std::string(std::strerror(errno)));
