@@ -7,10 +7,10 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 
-ScalarStorage::ScalarStorage(const std::filesystem::path &db_path) {
+ScalarStorage::ScalarStorage() {
     rocksdb::Options options;
     options.create_if_missing = true;
-    if (auto status = rocksdb::DB::Open(options, db_path, &db); !status.ok())
+    if (auto status = rocksdb::DB::Open(options, SCALAR_STORAGE_NAME, &db); !status.ok())
         throw std::runtime_error("Error opening RocksDB: " + status.ToString());
 }
 
@@ -35,15 +35,4 @@ rapidjson::Document ScalarStorage::get_scalar(uint32_t id) const {
     data.Accept(writer);
     get_global_logger()->debug("Data retrieved: {}, RocksDB status: {}", buffer.GetString(), status.ToString());
     return data;
-}
-
-void ScalarStorage::put(const std::string &key, const std::string &value) {
-    if (auto status = db->Put(rocksdb::WriteOptions(), key, value); !status.ok())
-        get_global_logger()->error("Error putting key-value pair: {}", status.ToString());
-}
-
-std::string ScalarStorage::get(const std::string &key) const {
-    std::string value;
-    db->Get(rocksdb::ReadOptions(), key, &value);
-    return value;
 }
