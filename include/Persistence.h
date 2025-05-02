@@ -2,7 +2,6 @@
 #define PERSISTENCE_H
 
 
-#include <filesystem>
 #include <fstream>
 #include <string>
 #include <utility>
@@ -11,9 +10,12 @@
 #include "ScalarStorage.h"
 #include "rapidjson/document.h"
 
+constexpr const char *WAL_FILE_NAME = "index_wal.log";
+constexpr const char *SNAPSHOT_FOLDER_NAME = "snapshot";
+
 class Persistence {
 public:
-    Persistence(const std::filesystem::path &wal_file_path, IndexFactory &index_factory, ScalarStorage &scalar_storage);
+    Persistence(IndexFactory &index_factory, ScalarStorage &scalar_storage);
 
     ~Persistence() { if (wal_stream.is_open()) wal_stream.close(); }
 
@@ -27,7 +29,7 @@ public:
 
 private:
     uint32_t id = 0;
-    std::fstream wal_stream;
+    std::fstream wal_stream = std::fstream(WAL_FILE_NAME, std::ios::in | std::ios::out | std::ios::app);
 
     uint32_t last_snapshot_id = 0;
 
