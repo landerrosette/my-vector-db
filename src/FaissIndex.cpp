@@ -45,5 +45,5 @@ void FaissIndex::load_index(const std::filesystem::path &file_path) {
     if (std::filesystem::exists(file_path))
         index.reset(faiss::read_index(file_path.c_str()));
     else
-        get_global_logger()->info("File {} does not exist, skipping load", file_path.string());
+        get_global_logger()->debug("File {} does not exist, skipping load", file_path.string());
 }

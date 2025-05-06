@@ -1,11 +1,8 @@
 #include "FilterIndex.h"
 
-#include <cerrno>
-#include <cstring>
 #include <fstream>
 #include <iterator>
 #include <sstream>
-#include <stdexcept>
 #include <vector>
 
 #include "logger.h"
@@ -89,19 +86,22 @@ void FilterIndex::deserialize_int_field_filter(std::istream &is) {
 }
 
 void FilterIndex::save_index(const std::filesystem::path &file_path) const {
-    std::ofstream ofs(file_path, std::ios::binary);
+    std::ofstream ofs;
+    ofs.exceptions(std::ios::failbit | std::ios::badbit);
+    ofs.open(file_path, std::ios::binary);
     serialize_int_field_filter(ofs);
-    ofs.close();
-    if (!ofs)
-        throw std::runtime_error("Error saving index to file: " + std::string(std::strerror(errno)));
 }
 
 void FilterIndex::load_index(const std::filesystem::path &file_path) {
     if (std::filesystem::exists(file_path)) {
-        std::ifstream ifs(file_path, std::ios::binary);
-        deserialize_int_field_filter(ifs);
-        if (!ifs && !ifs.eof())
-            throw std::runtime_error("Error loading index from file: " + std::string(std::strerror(errno)));
+        std::ifstream ifs;
+        ifs.exceptions(std::ios::failbit | std::ios::badbit);
+        ifs.open(file_path, std::ios::binary);
+        try {
+            deserialize_int_field_filter(ifs);
+        } catch (const std::ios::failure &) {
+            if (!ifs.eof()) throw;
+        }
     } else
-        get_global_logger()->info("File {} does not exist, skipping load", file_path.string());
+        get_global_logger()->debug("File {} does not exist, skipping load", file_path.string());
 }
