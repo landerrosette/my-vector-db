@@ -74,8 +74,10 @@ void HttpServer::query_handler(const httplib::Request &req, httplib::Response &r
     rapidjson::Document json_response;
     json_response.SetObject();
     auto &allocator = json_response.GetAllocator();
-    for (auto &member: json_data.GetObject())
-        json_response.AddMember(member.name, member.value, allocator);
+    if (json_data.IsObject()) {
+        for (auto &member: json_data.GetObject())
+            json_response.AddMember(member.name, member.value, allocator);
+    }
     json_response.AddMember("retCode", 0, allocator);
     set_json_response(json_response, res);
 }

@@ -23,7 +23,8 @@ void VectorDatabase::upsert(uint32_t id, const rapidjson::Document &data, IndexF
     scalar_storage.insert_scalar(id, data);
 }
 
-std::pair<std::vector<uint32_t>, std::vector<float> > VectorDatabase::search(const rapidjson::Document &json_request) const {
+std::pair<std::vector<uint32_t>, std::vector<float> > VectorDatabase::search(
+    const rapidjson::Document &json_request) const {
     std::vector<float> query(json_request["vectors"].Size());
     for (rapidjson::SizeType i = 0; i < json_request["vectors"].Size(); ++i)
         query[i] = json_request["vectors"][i].GetFloat();
@@ -75,13 +76,16 @@ void VectorDatabase::apply_upsert(uint32_t id, const rapidjson::Document &data, 
 
     // Update the filter index
     auto *filter_index = dynamic_cast<FilterIndex *>(index_factory->get_index(IndexFactory::IndexType::FILTER));
-    for (const auto &member: data.GetObject()) {
-        if (std::string field_name = member.name.GetString(); field_name != "id" && member.value.IsInt()) {
-            int field_value = member.value.GetInt();
-            std::optional<int> old_field_value;
-            if (old_data.IsObject() && old_data.HasMember(field_name.c_str()) && old_data[field_name.c_str()].IsInt())
-                old_field_value = old_data[field_name.c_str()].GetInt();
-            filter_index->update_int_field_filter(field_name, old_field_value, field_value, id);
+    if (data.IsObject()) {
+        for (const auto &member: data.GetObject()) {
+            if (std::string field_name = member.name.GetString(); field_name != "id" && member.value.IsInt()) {
+                int field_value = member.value.GetInt();
+                std::optional<int> old_field_value;
+                if (old_data.IsObject() && old_data.HasMember(field_name.c_str()) && old_data[field_name.c_str()].
+                    IsInt())
+                    old_field_value = old_data[field_name.c_str()].GetInt();
+                filter_index->update_int_field_filter(field_name, old_field_value, field_value, id);
+            }
         }
     }
 }
