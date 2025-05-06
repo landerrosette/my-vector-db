@@ -2,9 +2,7 @@
 #define VECTORDATABASE_H
 
 
-#include <filesystem>
 #include <memory>
-#include <string>
 #include <utility>
 
 #include "IndexFactory.h"
@@ -14,11 +12,9 @@
 
 class VectorDatabase {
 public:
-    VectorDatabase(std::unique_ptr<IndexFactory> index_factory, const std::filesystem::path &db_path,
-                   const std::filesystem::path &wal_path) : index_factory(std::move(index_factory)),
-                                                            scalar_storage(db_path),
-                                                            persistence(wal_path, *this->index_factory.get(),
-                                                                        scalar_storage) {}
+    explicit VectorDatabase(std::unique_ptr<IndexFactory> index_factory) : index_factory(std::move(index_factory)),
+                                                                           persistence(
+                                                                               *this->index_factory, scalar_storage) {}
 
     void upsert(uint32_t id, const rapidjson::Document &data, IndexFactory::IndexType index_type);
 
@@ -28,16 +24,14 @@ public:
 
     void reload_database();
 
-    void write_wal_log(const std::string &operation_type, const rapidjson::Document &json_data) {
-        persistence.write_wal_log(operation_type, json_data);
-    }
-
     void take_snapshot() { persistence.take_snapshot(); }
 
 private:
     std::unique_ptr<IndexFactory> index_factory;
     ScalarStorage scalar_storage;
     Persistence persistence;
+
+    void apply_upsert(uint32_t id, const rapidjson::Document &data, const rapidjson::Document &old_data, IndexFactory::IndexType index_type);
 };
 
 

@@ -4,7 +4,7 @@
 
 #include <fstream>
 #include <string>
-#include <utility>
+#include <tuple>
 
 #include "IndexFactory.h"
 #include "ScalarStorage.h"
@@ -17,26 +17,28 @@ class Persistence {
 public:
     Persistence(IndexFactory &index_factory, ScalarStorage &scalar_storage);
 
-    ~Persistence() { if (wal_stream.is_open()) wal_stream.close(); }
+    ~Persistence();
 
-    void write_wal_log(const std::string &operation_type, const rapidjson::Document &json_data);
+    void write_wal_log(const std::string &operation_type, const rapidjson::Document &data,
+                       const rapidjson::Document &old_data);
 
-    std::pair<std::string, rapidjson::Document> read_next_wal_log();
+    std::tuple<std::string, rapidjson::Document, rapidjson::Document> read_next_wal_log();
 
     void take_snapshot();
 
     void load_snapshot();
 
 private:
-    uint32_t id = 0;
-    std::fstream wal_stream = std::fstream(WAL_FILE_NAME, std::ios::in | std::ios::out | std::ios::app);
+    uint32_t wal_id = 0;
+    std::ofstream wal_write_stream;
+    std::ifstream wal_read_stream;
 
     uint32_t last_snapshot_id = 0;
 
     IndexFactory &index_factory;
     ScalarStorage &scalar_storage;
 
-    uint32_t increase_id() { return ++id; }
+    uint32_t increase_wal_id() { return ++wal_id; }
 
     void save_last_snapshot_id();
 
