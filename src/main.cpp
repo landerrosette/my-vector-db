@@ -1,5 +1,4 @@
 #include <memory>
-#include <string>
 #include <utility>
 
 #include "HttpServer.h"
@@ -18,7 +17,7 @@ int main() {
     index_factory->make_index(IndexFactory::IndexType::HNSW, dim, num_data);
     index_factory->make_index(IndexFactory::IndexType::FILTER);
 
-    VectorDatabase vector_database(std::move(index_factory), "scalar_storage.db", "wal_log.txt");
+    VectorDatabase vector_database(std::move(index_factory));
     vector_database.reload_database();
     get_global_logger()->info("Vector database initialized");
 
