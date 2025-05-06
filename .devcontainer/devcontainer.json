@@ -18,10 +18,7 @@
     // Configure tool-specific properties.
     "customizations": {
         "jetbrains": {
-            "backend": "CLion",
-            "plugins": [
-                "com.github.copilot"
-            ]
+            "backend": "CLion"
         }
     }
 
