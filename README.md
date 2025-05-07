@@ -45,8 +45,8 @@ Once you are inside the container, you can build and run the project from the in
     build/vector-db
     ```
 
-   The server will now start on `0.0.0.0:8080` inside the container. You might need to configure port forwarding in your
-   editor or Docker setup to access this port from your host machine.
+   The server will now start on `0.0.0.0:8080` inside the container. You might need to configure port forwarding
+   to access this port from your host machine.
 
    **Note:** Some initial parameters are currently hardcoded in `main.cpp`.
 
