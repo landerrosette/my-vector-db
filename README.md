@@ -106,8 +106,8 @@ Request Body:
 - `k`: (Required, integer) The number of nearest neighbors to return.
 - `indexType`: (Required, string) Specifies which vector index to perform the search on ("FLAT" or "HNSW").
 - `filter`: (Optional, object) An object specifying filtering criteria.
-    - `fieldName`: (Required if `filter` is present, string) The name of the scalar field to filter on. **Currently only
-      supports integer fields**.
+    - `fieldName`: (Required if `filter` is present, string) The name of the scalar field to filter on. Only
+      supports integer fields.
     - `value`: (Required if `filter` is present, integer) The value used for filtering.
     - `op`: (Required if `filter` is present, string) The comparison operation. (`=` (equal to) or `!=` (not equal
       to)).
