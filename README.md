@@ -10,7 +10,7 @@ configuration (`.devcontainer` folder).
 ### Prerequisites
 
 - Docker
-- An editor/IDE with Dev Containers support (e.g., VS Code or JetBrains Gateway/CLion)
+- An editor/IDE with Dev Container support (e.g., VS Code or JetBrains Gateway/CLion)
 
 ### Steps
 
