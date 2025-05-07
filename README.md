@@ -14,7 +14,7 @@ configuration (`.devcontainer` folder).
 
 ### Steps
 
-1. Clone the repository. Ensure you clone the repository including its submodules.
+1. Clone the repository. **Ensure you clone the repository including its submodules.**
 
     ```shell
     git clone --recursive https://github.com/landerrosette/my-vector-db.git
