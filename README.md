@@ -8,24 +8,24 @@ filtering. It exposes its functionality via an HTTP API.
 The recommended way to set up the development environment and handle dependencies is by using the provided Dev Container
 configuration (`.devcontainer` folder).
 
-**Prerequisites:**
+### Prerequisites
 
-1. **Docker:** Ensure Docker is installed and running on your system.
-2. **VS Code or JetBrains Gateway/CLion:** Install one of these editors with the appropriate "Dev Containers" or "Remote
+1. Docker: Ensure Docker is installed and running on your system.
+2. VS Code or JetBrains Gateway/CLion: Install one of these editors with the appropriate "Dev Containers" or "Remote
    Development" extension installed.
 
-**Steps:**
+### Steps
 
-1. **Clone the repository:** Ensure you clone the repository including its submodules.
+1. Clone the repository: Ensure you clone the repository including its submodules.
 
    ```shell
    git clone --recursive https://github.com/landerrosette/my-vector-db.git
    ```
 
-2. **Open the project:** Open the cloned project folder in VS Code or JetBrains IDE.
-3. **Reopen in Container:** Your editor should detect the Dev Container configuration and prompt you to "Reopen in
+2. Open the project: Open the cloned project folder in VS Code or JetBrains IDE.
+3. Reopen in Container: Your editor should detect the Dev Container configuration and prompt you to "Reopen in
    Container" (VS Code) or similar. Accept the prompt.
-4. **Wait for Container setup:** Docker will build the image (based on the `Dockerfile`) and start a container with all
+4. Wait for Container setup: Docker will build the image (based on the `Dockerfile`) and start a container with all
    necessary
    dependencies pre-installed and the project code mounted. This might take a few minutes the first time.
 
@@ -35,7 +35,7 @@ You are now working inside the container environment, ready to build and run the
 
 Once you are inside the Dev Container environment, you can build and run the project from the integrated terminal:
 
-1. **Build:**
+1. Build:
 
    ```shell
    cmake -B build
@@ -44,7 +44,7 @@ Once you are inside the Dev Container environment, you can build and run the pro
 
    This will create the `vector-db` executable in the `build` directory.
 
-2. **Run:**
+2. Run:
 
    ```shell
    build/vector-db
@@ -69,7 +69,7 @@ are also JSON and include a `retCode` (0 for success).
 
 Inserts a new data entry or updates an existing one based on the `id`. Includes vector data and optional scalar fields.
 
-#### Request Body
+Request Body:
 
 ```json
 {
@@ -91,7 +91,7 @@ Inserts a new data entry or updates an existing one based on the `id`. Includes 
 
 Searches for nearest neighbors based on a query vector, with optional filtering.
 
-#### Request Body
+Request Body:
 
 ```json
 {
@@ -120,7 +120,7 @@ Searches for nearest neighbors based on a query vector, with optional filtering.
 
 Retrieves the data associated with a given ID.
 
-#### Request Body
+Request Body:
 
 ```json
 {
