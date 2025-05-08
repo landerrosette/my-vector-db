@@ -32,29 +32,23 @@ You are now working inside the container environment, ready to build and run the
 
 Once you are inside the container, you can build and run the project from the integrated terminal.
 
-1. Configure and build the project in the `build` directory.
-
     ```shell
     cmake -B build
     cmake --build build
+    cd build
+    ./vector-db
     ```
 
-2. From the `build` directory, run the application.
+The server will now start on `0.0.0.0:8080` inside the container. You might need to configure port forwarding
+to access this port from your host machine.
 
-    ```shell
-    build/vector-db
-    ```
+**Note:** Some initial parameters are currently hardcoded in `main.cpp`.
 
-   The server will now start on `0.0.0.0:8080` inside the container. You might need to configure port forwarding
-   to access this port from your host machine.
+- The vector dimension is set to `1`.
+- The HTTP server listens on `0.0.0.0:8080`.
+- The global log level is set to `DEBUG`.
 
-   **Note:** Some initial parameters are currently hardcoded in `main.cpp`.
-
-    - The vector dimension is set to `1`.
-    - The HTTP server listens on `0.0.0.0:8080`.
-    - The global log level is set to `DEBUG`.
-
-   These values can be modified by editing `main.cpp` and rebuilding the project.
+These values can be modified by editing `main.cpp` and rebuilding the project.
 
 ## HTTP Endpoints
 
