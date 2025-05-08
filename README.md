@@ -32,12 +32,12 @@ You are now working inside the container environment, ready to build and run the
 
 Once you are inside the container, you can build and run the project from the integrated terminal.
 
-    ```shell
-    cmake -B build
-    cmake --build build
-    cd build
-    ./vector-db
-    ```
+```shell
+cmake -B build
+cmake --build build
+cd build
+./vector-db
+```
 
 The server will now start on `0.0.0.0:8080` inside the container. You might need to configure port forwarding
 to access this port from your host machine.
