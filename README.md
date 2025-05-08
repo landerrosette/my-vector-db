@@ -39,7 +39,7 @@ Once you are inside the container, you can build and run the project from the in
     cmake --build build
     ```
 
-2. Run the application:
+2. From the `build` directory, run the application.
 
     ```shell
     build/vector-db
