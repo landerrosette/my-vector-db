@@ -1,4 +1,3 @@
-#include <memory>
 #include <utility>
 
 #include "HttpServer.h"
@@ -12,10 +11,10 @@ int main() {
 
     int dim = 1; // Dimension of the vectors
     int num_data = 1000; // Number of data points
-    auto index_factory = std::make_unique<IndexFactory>();
-    index_factory->make_index(IndexFactory::IndexType::FLAT, dim);
-    index_factory->make_index(IndexFactory::IndexType::HNSW, dim, num_data);
-    index_factory->make_index(IndexFactory::IndexType::FILTER);
+    IndexFactory index_factory;
+    index_factory.make_index(IndexFactory::IndexType::FLAT, dim);
+    index_factory.make_index(IndexFactory::IndexType::HNSW, dim, num_data);
+    index_factory.make_index(IndexFactory::IndexType::FILTER);
 
     VectorDatabase vector_database(std::move(index_factory));
     vector_database.reload_database();

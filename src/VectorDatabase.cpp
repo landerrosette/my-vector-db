@@ -37,12 +37,12 @@ std::pair<std::vector<uint32_t>, std::vector<float> > VectorDatabase::search(
         std::string op_str = filter["op"].GetString();
         int value = filter["value"].GetInt();
         auto op = op_str == "=" ? FilterIndex::Operation::EQUAL : FilterIndex::Operation::NOT_EQUAL;
-        auto *filter_index = dynamic_cast<FilterIndex *>(index_factory->get_index(IndexFactory::IndexType::FILTER));
+        auto *filter_index = dynamic_cast<FilterIndex *>(index_factory.get_index(IndexFactory::IndexType::FILTER));
         filter_bitmap = filter_index->get_int_field_filter_bitmap(field_name, op, value);
     }
 
     auto index_type = get_index_type_from_request(json_request);
-    auto *index = dynamic_cast<VectorIndex *>(index_factory->get_index(index_type));
+    auto *index = dynamic_cast<VectorIndex *>(index_factory.get_index(index_type));
     return index->search_vectors(query, k, filter_bitmap);
 }
 
@@ -63,7 +63,7 @@ void VectorDatabase::reload_database() {
 
 void VectorDatabase::apply_upsert(uint32_t id, const rapidjson::Document &data, const rapidjson::Document &old_data,
                                   IndexFactory::IndexType index_type) {
-    auto *index = dynamic_cast<VectorIndex *>(index_factory->get_index(index_type));
+    auto *index = dynamic_cast<VectorIndex *>(index_factory.get_index(index_type));
 
     // Remove the old vector from the index if it exists
     if (old_data.IsObject()) index->remove_vectors({id});
@@ -75,7 +75,7 @@ void VectorDatabase::apply_upsert(uint32_t id, const rapidjson::Document &data, 
     index->insert_vectors(new_vector, id);
 
     // Update the filter index
-    auto *filter_index = dynamic_cast<FilterIndex *>(index_factory->get_index(IndexFactory::IndexType::FILTER));
+    auto *filter_index = dynamic_cast<FilterIndex *>(index_factory.get_index(IndexFactory::IndexType::FILTER));
     if (data.IsObject()) {
         for (const auto &member: data.GetObject()) {
             if (std::string field_name = member.name.GetString(); field_name != "id" && member.value.IsInt()) {

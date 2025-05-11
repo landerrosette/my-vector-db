@@ -2,7 +2,6 @@
 #define VECTORDATABASE_H
 
 
-#include <memory>
 #include <utility>
 
 #include "IndexFactory.h"
@@ -12,9 +11,8 @@
 
 class VectorDatabase {
 public:
-    explicit VectorDatabase(std::unique_ptr<IndexFactory> index_factory) : index_factory(std::move(index_factory)),
-                                                                           persistence(
-                                                                               *this->index_factory, scalar_storage) {}
+    explicit VectorDatabase(IndexFactory &&index_factory) : index_factory(std::move(index_factory)),
+                                                            persistence(this->index_factory, scalar_storage) {}
 
     void upsert(uint32_t id, const rapidjson::Document &data, IndexFactory::IndexType index_type);
 
@@ -27,7 +25,7 @@ public:
     void take_snapshot() { persistence.take_snapshot(); }
 
 private:
-    std::unique_ptr<IndexFactory> index_factory;
+    IndexFactory index_factory;
     ScalarStorage scalar_storage;
     Persistence persistence;
 
